@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project>
+	<PropertyGroup>
+		<MAPBOX_DOWNLOADS_TOKEN>YOUR_MAPBOX_DOWNLOADS_TOKEN</MAPBOX_DOWNLOADS_TOKEN>
+		<MapboxAccessToken>YOUR_MAPBOX_ACCESS_TOKEN</MapboxAccessToken>
+	</PropertyGroup>
+</Project>

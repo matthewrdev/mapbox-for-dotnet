@@ -1,0 +1,615 @@
+﻿using System.Diagnostics;
+using System.Security.Cryptography;
+using System.Text;
+using System.Xml;
+using SharpCompress.Archives;
+using SharpCompress.Archives.Tar;
+using SharpCompress.Common;
+using SharpCompress.Readers;
+using SharpCompress.Archives.Zip;
+using Microsoft.Build.Framework;
+using Xamarin.Build.Download;
+using Xamarin.Components.Ide.Activation;
+using Xamarin.MacDev;
+
+namespace Dependencies.Gradle;
+
+public class GradleSync : AsyncTask, Xamarin.Build.Download.ILogger
+{
+    const int ExclusiveLockTimeout = 60;
+
+    public ITaskItem[] Repositories { get; set; }
+
+    public ITaskItem[] Implementations { get; set; }
+
+    public ITaskItem[] GradleProperties { get; set; }
+
+    public ITaskItem[] UsesPermissions { get; set; }
+
+    public string VsInstallRoot { get; set; }
+    public string User7ZipPath { get; set; }
+    public string GradleAssetsPath { get; set; }
+    public string TempDir { get; set; }
+    public bool IsAndroid { get; set; }
+    public bool EnableJetifier { get; set; }
+    public string AndroidSdkPath { get; set; }
+    public string AndroidMinSdkVersion { get; set; }
+    public string AndroidTargetSdkVersion { get; set; }
+
+    public override bool Execute()
+    {
+        var implementations = ParseImplementations(Implementations);
+
+        if (implementations.Length == 0)
+        {
+            LogMessage("No dependencies!");
+            return true;
+        }
+
+        Task.Run(async () =>
+        {
+            var md5 = MD5Hash(string.Join(",", implementations.Select(x => x.Id).OrderBy(x => x)));
+            var md5File = Path.Combine(TempDir, ".md5");
+
+            if (File.Exists(md5File))
+            {
+                var lastMd5 = File.ReadAllText(md5File);
+                if (lastMd5 == md5)
+                {
+                    Complete();
+                    return;
+                }
+            }
+
+            try
+            {
+                LogMessage("GradleSyncTempDir: " + TempDir);
+                try
+                {
+                    if (Directory.Exists(TempDir))
+                    {
+                        Directory.Delete(TempDir, true);
+                    }
+
+                    Directory.CreateDirectory(TempDir);
+                }
+                catch (Exception ex)
+                {
+                    LogCodedError(
+                        ErrorCodes.DirectoryCreateFailed,
+                        string.Format("Failed to create directory '{0}'.", TempDir)
+                    );
+                    LogMessage("Directory creation failure reason: " + ex.ToString(), MessageImportance.High);
+                    return;
+                }
+
+                var unpacked = await MakeSureLibraryIsInPlace(Token);
+
+                if (!unpacked)
+                {
+                    return;
+                }
+
+                OverrideLocalProperties();
+
+                AddRepositories();
+
+                AdjustSdkVersions();
+
+                AdjustGradleProperties();
+
+                AddPermissions(UsesPermissions);
+
+                AddDependencies(implementations);
+
+                await ExecuteGradleBuild();
+
+                File.WriteAllText(md5File, md5);
+            }
+            catch (Exception ex)
+            {
+                LogErrorFromException(ex);
+            }
+            finally
+            {
+                Complete();
+            }
+        });
+
+        var result = base.Execute();
+
+        return result && !Log.HasLoggedErrors;
+    }
+
+    async Task<bool> ExecuteGradleBuild()
+    {
+        var processPath = Platform.IsWindows
+            ? Path.Combine(TempDir, "gradlew.bat")
+            : Path.Combine(TempDir, "gradlew");
+        ProcessArgumentBuilder args = new ProcessArgumentBuilder(processPath);
+        args.Add("build");
+
+        ProcessStartInfo psi = new ProcessStartInfo(args.ProcessPath, args.ToString())
+        {
+            WorkingDirectory = TempDir,
+            CreateNoWindow = true,
+            UseShellExecute = false
+        };
+
+        try
+        {
+            LogMessage("Exec gradlew build {0} --> {1}", processPath, TempDir);
+            var output = new StringWriter();
+            int returnCode = await ProcessUtils.StartProcess(psi, output, output, Token);
+            if (returnCode == 0)
+            {
+                return true;
+            }
+
+            LogCodedError(
+                ErrorCodes.GradleBuildFailed,
+                string.Format(
+                    "Gradlew build failed {0} --> {1}", processPath, TempDir)
+            );
+
+            LogMessage("Unpacking failure reason: " + output.ToString(), MessageImportance.High);
+        }
+        catch (Exception ex)
+        {
+            LogErrorFromException(ex);
+        }
+
+        return false;
+    }
+
+    private void AdjustGradleProperties()
+    {
+        var gradleSyncPath = Path.Combine(TempDir, "gradle.properties");
+        var gradleSyncContent = File.ReadAllText(gradleSyncPath);
+        LogMessage(gradleSyncContent, MessageImportance.Normal);
+
+        if (EnableJetifier)
+        {
+            gradleSyncContent += @"
+
+# Automatically convert third-party libraries to use AndroidX
+android.enableJetifier=true
+            ";
+        }
+
+        File.WriteAllText(gradleSyncPath, gradleSyncContent);
+        LogMessage(gradleSyncContent, MessageImportance.Normal);
+    }
+
+    private void AddPermissions(ITaskItem[] usesPermissions)
+    {
+        var permissions = ParsePermissions(usesPermissions);
+
+        if (permissions.Length == 0)
+        {
+            LogMessage("No permissions!");
+        }
+
+        var gradleSyncPath = Path.Combine(TempDir, "gradle_util/src/main/AndroidManifest.xml");
+
+        var xmlDocument = new XmlDocument();
+        var nsManager = new XmlNamespaceManager(xmlDocument.NameTable);
+        var androidNsUri = "http://schemas.android.com/apk/res/android";
+        nsManager.AddNamespace("android", androidNsUri);
+        xmlDocument.Load(gradleSyncPath);
+
+        LogMessage(xmlDocument.OuterXml, MessageImportance.Normal);
+
+        foreach (var permission in permissions)
+        {
+            var usesPermissionNode = xmlDocument.CreateElement("uses-permission");
+            usesPermissionNode.SetAttribute("name", androidNsUri, permission.Permission);
+            xmlDocument.DocumentElement.AppendChild(usesPermissionNode);
+        }
+
+        File.WriteAllText(gradleSyncPath, xmlDocument.OuterXml);
+        LogMessage(xmlDocument.OuterXml, MessageImportance.Normal);
+    }
+
+    private void AdjustSdkVersions()
+    {
+        var GradleSyncPath = Path.Combine(TempDir, "gradle_util/build.gradle.kts");
+        var GradleSyncContent = File.ReadAllText(GradleSyncPath);
+        LogMessage(GradleSyncContent, MessageImportance.Normal);
+
+        if (!string.IsNullOrWhiteSpace(AndroidMinSdkVersion))
+        {
+            GradleSyncContent = GradleSyncContent.Replace(
+                "minSdk 26",
+                $"minSdk {AndroidMinSdkVersion}"
+                );
+        }
+
+        if (!string.IsNullOrWhiteSpace(AndroidTargetSdkVersion))
+        {
+            GradleSyncContent = GradleSyncContent.Replace(
+                "targetSdk 34",
+                $"targetSdk {AndroidTargetSdkVersion}"
+                );
+            GradleSyncContent = GradleSyncContent.Replace(
+                "compileSdk 34",
+                $"compileSdk {AndroidTargetSdkVersion}"
+                );
+        }
+
+        File.WriteAllText(GradleSyncPath, GradleSyncContent);
+        LogMessage(GradleSyncContent, MessageImportance.Normal);
+    }
+
+    private void AddDependencies(GradleImplementation[] implementations)
+    {
+        var repositoriesStringBuilder = new StringBuilder(Environment.NewLine);
+
+        for (int i = 0; i < implementations.Length; i++)
+        {
+            repositoriesStringBuilder.AppendLine(implementations[i].Implemetation);
+        }
+
+        var GradleSyncPath = Path.Combine(TempDir, "gradle_util/build.gradle.kts");
+        var defaultGradleSyncContent = File.ReadAllText(GradleSyncPath);
+        LogMessage(defaultGradleSyncContent);
+
+        const string DependenciesSectionStart = "dependencies {";
+        var indexOfDependenciesSectionStart = defaultGradleSyncContent.LastIndexOf(DependenciesSectionStart);
+        var insertionPosition = indexOfDependenciesSectionStart + DependenciesSectionStart.Length;
+
+        var adjustedGradleSyncContent = defaultGradleSyncContent.Insert(
+            insertionPosition,
+            repositoriesStringBuilder.ToString()
+        );
+        File.WriteAllText(GradleSyncPath, adjustedGradleSyncContent);
+        LogMessage(adjustedGradleSyncContent);
+    }
+
+    private void AddRepositories()
+    {
+        var repositories = ParseRepositories(Repositories);
+        var repositoriesStringBuilder = new StringBuilder(Environment.NewLine);
+
+        for (int i = 0; i < repositories.Length; i++)
+        {
+            repositoriesStringBuilder.AppendLine(repositories[i].Repository);
+        }
+
+        var settingsGradlePath = Path.Combine(TempDir, "settings.gradle.kts");
+        var defaultSettingsGradleContent = File.ReadAllText(settingsGradlePath);
+        LogMessage(defaultSettingsGradleContent);
+
+        const string LastDefaultDependency = "mavenCentral()";
+        var indexOfLastDefaultDependency = defaultSettingsGradleContent.LastIndexOf(LastDefaultDependency);
+        var insertionPosition = indexOfLastDefaultDependency + LastDefaultDependency.Length;
+
+        var adjustedSettingsGradleContent = defaultSettingsGradleContent.Insert(
+            insertionPosition,
+            repositoriesStringBuilder.ToString()
+        );
+        File.WriteAllText(settingsGradlePath, adjustedSettingsGradleContent);
+        LogMessage(adjustedSettingsGradleContent);
+    }
+
+    private void OverrideLocalProperties()
+    {
+        var gradleProperties = ParseGradleProperties(GradleProperties);
+
+        var graldePropertiesStringBuilder = new StringBuilder();
+        var nomarlizedAndroidSdkPath = Platform.IsWindows
+            ? AndroidSdkPath.Replace("\\", "/")
+            : AndroidSdkPath;
+        graldePropertiesStringBuilder.AppendLine($"sdk.dir={nomarlizedAndroidSdkPath}");
+
+        for (int i = 0; i < gradleProperties.Length; i++)
+        {
+            var propertyLine = $"{gradleProperties[i].Id}={gradleProperties[i].Value}";
+
+            graldePropertiesStringBuilder.AppendLine(propertyLine);
+        }
+
+        var gradleLocalPropertiesPath = Path.Combine(TempDir, "local.properties");
+        var localProperties = graldePropertiesStringBuilder.ToString();
+        File.WriteAllText(gradleLocalPropertiesPath, localProperties);
+        LogMessage(localProperties);
+    }
+
+    async Task<bool> MakeSureLibraryIsInPlace(CancellationToken token)
+    {
+        if (!File.Exists(GradleAssetsPath))
+        {
+            LogCodedError(
+                ErrorCodes.GradleAssetsFileMissing,
+                string.Format("Packed gradle assets is missing '{0}'.", GradleAssetsPath)
+            );
+            return false;
+        }
+
+        // Skip extraction if the file is already in place
+        var flagFile = TempDir + "/.unpacked";
+        if (File.Exists(flagFile))
+            return true;
+
+        var lockFile = TempDir + "/.locked";
+        using (var lockStream = DownloadUtils.ObtainExclusiveFileLock(lockFile, Token, TimeSpan.FromSeconds(ExclusiveLockTimeout), this))
+        {
+            if (lockStream == null)
+            {
+                LogCodedError(ErrorCodes.ExclusiveLockTimeout, "Timed out waiting for exclusive file lock on: {0}", lockFile);
+                LogMessage("Timed out waiting for an exclusive file lock on: " + lockFile, MessageImportance.High);
+                return false;
+            }
+
+            // Check flag again in case someone else downloaded this while we were waiting for the lock
+            if (File.Exists(flagFile))
+                return true;
+
+            if (await ExtractArchive(flagFile, token))
+            {
+                File.WriteAllText(flagFile, "This marks that the extraction completed successfully");
+                return true;
+            }
+        }
+
+        // We will attempt to delete the lock file when we're done
+        try
+        {
+            if (File.Exists(lockFile))
+                File.Delete(lockFile);
+        }
+        catch (Exception e)
+        {
+            LogMessage("Exception on deleting lockFile: {0}\n{0}", lockFile, e.Message);
+        }
+
+        return false;
+    }
+
+    private GradleProperty[] ParseGradleProperties(ITaskItem[] taskItems)
+    {
+        if (taskItems == null || taskItems.Length == 0) return new GradleProperty[0];
+
+        var gradleProperties = new List<GradleProperty>();
+
+        for (int i = 0; i < taskItems.Length; i++)
+        {
+            var taskItem = taskItems[i];
+            var kvp = new GradleProperty
+            {
+                Id = taskItem.ItemSpec,
+                Value = taskItem.GetMetadata("Value")
+            };
+            gradleProperties.Add(kvp);
+        }
+
+        return gradleProperties.ToArray();
+    }
+
+    private GradleRepository[] ParseRepositories(ITaskItem[] taskItems)
+    {
+        if (taskItems == null || taskItems.Length == 0) return [];
+
+        var repositories = new List<GradleRepository>();
+
+        for (int i = 0; i < taskItems.Length; i++)
+        {
+            var taskItem = taskItems[i];
+            var repository = new GradleRepository
+            {
+                Id = taskItem.ItemSpec,
+                Repository = taskItem.GetMetadata("Repository"),
+
+            };
+            repositories.Add(repository);
+        }
+
+        return [.. repositories];
+    }
+
+    private UsesPermission[] ParsePermissions(ITaskItem[] taskItems)
+    {
+        if (taskItems == null || taskItems.Length == 0) return [];
+
+        var permissions = new List<UsesPermission>();
+
+        for (int i = 0; i < taskItems.Length; i++)
+        {
+            var taskItem = taskItems[i];
+            var repository = new UsesPermission
+            {
+                Id = taskItem.ItemSpec,
+                Permission = taskItem.ItemSpec,
+
+            };
+            permissions.Add(repository);
+        }
+
+        return [.. permissions];
+    }
+
+    private GradleImplementation[] ParseImplementations(ITaskItem[] taskItems)
+    {
+        if (taskItems == null || taskItems.Length == 0) return [];
+
+        var implementations = new List<GradleImplementation>();
+
+        for (int i = 0; i < taskItems.Length; i++)
+        {
+            var taskItem = taskItems[i];
+
+            var implementationDeclaration = taskItem.GetMetadata("Implementation");
+            if (string.IsNullOrWhiteSpace(implementationDeclaration))
+            {
+                implementationDeclaration = $"implementation(\"{taskItem.ItemSpec}\")";
+            }
+
+            var implementation = new GradleImplementation
+            {
+                Id = taskItem.ItemSpec,
+                Implemetation = implementationDeclaration,
+            };
+
+            implementations.Add(implementation);
+        }
+
+        return implementations.ToArray();
+    }
+
+    async Task<bool> ExtractArchive(string flagFile, CancellationToken token)
+    {
+        try
+        {
+            LogMessage("Extracting {0} to {1}", GradleAssetsPath, TempDir);
+
+            bool ok = false;
+            if (Platform.IsWindows)
+            {
+                // Use in-process extraction via SharpCompress on Windows
+                ok = ExtractArchiveInProcess(GradleAssetsPath, TempDir);
+            }
+            else
+            {
+                // Use native unzip/tar on non-Windows
+                Directory.CreateDirectory(TempDir);
+                var args = BuildExtractionArgs(GradleAssetsPath, TempDir);
+                var psi = new ProcessStartInfo(args.ProcessPath, args.ToString())
+                {
+                    WorkingDirectory = TempDir,
+                    CreateNoWindow = true,
+                    UseShellExecute = false
+                };
+                using (var proc = Process.Start(psi))
+                {
+                    proc.WaitForExit();
+                    ok = proc.ExitCode == 0;
+                }
+            }
+            if (ok)
+                return true;
+
+            LogCodedError(
+                ErrorCodes.ExtractionFailed,
+                string.Format(
+                    "Unpacking failed. Please download '{0}' and extract it to the '{1}' directory " +
+                    "and create an empty file called '{2}'.", GradleAssetsPath, TempDir, flagFile)
+            );
+        }
+        catch (Exception ex)
+        {
+            LogErrorFromException(ex);
+        }
+
+        //something went wrong, clean up so we try again next time
+        try
+        {
+            Directory.Delete(TempDir, true);
+        }
+        catch (Exception ex)
+        {
+            LogCodedError(ErrorCodes.DirectoryDeleteFailed, "Failed to delete directory '{0}'.", TempDir);
+            LogErrorFromException(ex);
+        }
+
+        return false;
+    }
+    static ProcessArgumentBuilder BuildExtractionArgs(string file, string contentDir)
+    {
+        var ext = Path.GetExtension(file).ToLowerInvariant();
+        ProcessArgumentBuilder args;
+        if (ext == ".zip")
+        {
+            args = new ProcessArgumentBuilder("/usr/bin/unzip");
+            args.Add("-o", "-q");
+            args.AddQuoted(file);
+            args.Add("-d");
+            args.AddQuoted(contentDir);
+        }
+        else if (ext == ".tar" || ext == ".tgz" || ext == ".tar.gz")
+        {
+            args = new ProcessArgumentBuilder("tar");
+            args.Add("-xf");
+            args.AddQuoted(file);
+            args.Add("-C");
+            args.AddQuoted(contentDir);
+        }
+        else
+        {
+            throw new NotSupportedException($"Unsupported archive extension: {ext}");
+        }
+        return args;
+    }
+    // External extraction helpers removed. Extraction is handled in-process via SharpCompress.
+
+    // In-process extraction using SharpCompress. Supports .zip, .tar, .tgz, .gz
+    static bool ExtractArchiveInProcess(string archivePath, string destination)
+    {
+        if (!File.Exists(archivePath))
+            throw new FileNotFoundException("Archive not found", archivePath);
+
+        Directory.CreateDirectory(destination);
+
+        var extension = Path.GetExtension(archivePath).ToLowerInvariant();
+
+        // Handle zip archives directly
+        if (extension == ".zip")
+        {
+            using (var archive = ZipArchive.Open(archivePath))
+            {
+                foreach (var entry in archive.Entries)
+                {
+                    if (entry.IsDirectory)
+                        continue;
+
+                    var outPath = Path.Combine(destination, entry.Key.Replace('/', Path.DirectorySeparatorChar));
+                    var outDir = Path.GetDirectoryName(outPath);
+                    if (!string.IsNullOrEmpty(outDir) && !Directory.Exists(outDir))
+                        Directory.CreateDirectory(outDir);
+
+                    entry.WriteToFile(outPath, new ExtractionOptions() { ExtractFullPath = true, Overwrite = true });
+                }
+            }
+            return true;
+        }
+        // For tar/tgz/gz use a generic reader
+        try
+        {
+            var readerOptions = new ReaderOptions { LeaveStreamOpen = false };
+            using (var stream = File.OpenRead(archivePath))
+            using (var reader = ReaderFactory.Open(stream, readerOptions))
+            {
+                while (reader.MoveToNextEntry())
+                {
+                    var entry = reader.Entry;
+                    if (entry.IsDirectory)
+                        continue;
+
+                    var outPath = Path.Combine(destination, entry.Key.Replace('/', Path.DirectorySeparatorChar));
+                    var outDir = Path.GetDirectoryName(outPath);
+                    if (!string.IsNullOrEmpty(outDir) && !Directory.Exists(outDir))
+                        Directory.CreateDirectory(outDir);
+
+                    reader.WriteEntryToFile(outPath, new ExtractionOptions() { ExtractFullPath = true, Overwrite = true });
+                }
+            }
+            return true;
+        }
+        catch (Exception)
+        {
+            return false;
+        }
+    }
+
+    static string MD5Hash(string input)
+    {
+        StringBuilder hash = new StringBuilder();
+        MD5CryptoServiceProvider md5provider = new MD5CryptoServiceProvider();
+        byte[] bytes = md5provider.ComputeHash(new UTF8Encoding().GetBytes(input));
+
+        for (int i = 0; i < bytes.Length; i++)
+        {
+            hash.Append(bytes[i].ToString("x2"));
+        }
+        return hash.ToString();
+    }
+}

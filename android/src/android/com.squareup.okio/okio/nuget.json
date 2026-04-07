@@ -1,0 +1,5 @@
+{
+  "packageId": "Square.OkIO",
+  "name": "okio",
+  "dependencyOnly": true
+}

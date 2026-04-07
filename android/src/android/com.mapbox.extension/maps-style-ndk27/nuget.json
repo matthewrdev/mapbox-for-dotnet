@@ -1,0 +1,5 @@
+{
+  "packageId": "Bindings.Mapbox.Extension.MapsStyleNdk27",
+  "name": "maps-style-ndk27",
+  "dependencyOnly": false
+}

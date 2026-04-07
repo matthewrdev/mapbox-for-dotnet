@@ -1,0 +1,5 @@
+{
+  "packageId": "Bindings.Mapbox.Maps.BaseNdk27",
+  "name": "base-ndk27",
+  "dependencyOnly": false
+}

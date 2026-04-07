@@ -1,0 +1,5 @@
+{
+  "packageId": "Bindings.Mapbox.Plugin.MapsOverlayNdk27",
+  "name": "maps-overlay-ndk27",
+  "dependencyOnly": false
+}

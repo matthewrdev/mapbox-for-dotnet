@@ -1,0 +1,4 @@
+{
+  "name": "com.squareup.okhttp3",
+  "runtimeDependenciesAsCompile": true
+}

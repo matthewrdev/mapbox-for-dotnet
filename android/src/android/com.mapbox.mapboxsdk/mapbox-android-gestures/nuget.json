@@ -1,0 +1,5 @@
+{
+  "packageId": "Bindings.Mapbox.Mapboxsdk.MapboxAndroidGestures",
+  "name": "mapbox-android-gestures",
+  "dependencyOnly": false
+}

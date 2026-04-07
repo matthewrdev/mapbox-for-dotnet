@@ -1,0 +1,5 @@
+{
+  "packageId": "Bindings.Mapbox.Plugin.MapsGesturesNdk27",
+  "name": "maps-gestures-ndk27",
+  "dependencyOnly": false
+}

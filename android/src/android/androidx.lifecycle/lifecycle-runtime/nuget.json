@@ -1,0 +1,5 @@
+{
+  "packageId": "Xamarin.AndroidX.Lifecycle.Runtime",
+  "name": "lifecycle-runtime",
+  "dependencyOnly": true
+}

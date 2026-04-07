@@ -1,0 +1,116 @@
+@using System
+@using System.Linq
+@using System.Collections.Generic
+@{
+  var packageIconPath = Model.Artifact.Icon ?? "../../../../../assets/tv-ico.png";
+  var assemblyVersion = Model.Artifact.AssemblyVersion;
+  var winSourcesJarRelativeFilePath = string.IsNullOrEmpty(Model.Artifact.SourcesJarRelativeFilePath) ? null :
+  Model.Artifact.SourcesJarRelativeFilePath.Replace('/', '\\');
+  var winLibFolderPath = string.IsNullOrEmpty(Model.Artifact.LibFolderPath) ? null :
+  Model.Artifact.LibFolderPath.Replace('/', '\\');
+  var winLibRelativePath = string.IsNullOrEmpty(Model.Artifact.LibRelativePath) ? null :
+  Model.Artifact.LibRelativePath.Replace('/', '\\');
+}
+<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="../../../../BindingProject.Shared.props" />
+  @if (Model.Artifact.Group.Id.StartsWith("com.mapbox", StringComparison.Ordinal))
+  {
+  <Import Condition=" EXISTS('../../../../Mapbox.Shared.props') " Project="../../../../Mapbox.Shared.props" />
+  }
+  <Import Condition=" EXISTS('../../maven.props') " Project="../../maven.props" />
+  <Import Condition=" EXISTS('../maven.props') " Project="../maven.props" />
+
+  <PropertyGroup>
+    <AssemblyName>@(Model.Artifact.Nuget.PackageId)</AssemblyName>
+    <RootNamespace>@(Model.Artifact.Nuget.PackageId)</RootNamespace>
+    <PackageId>@(Model.Artifact.Nuget.PackageId)</PackageId>
+    <Title>@(Model.GroupName) - @(Model.Artifact.Name)</Title>
+    <Summary>.NET Android binding library for @(Model.Artifact.GradleImplementation)</Summary>
+    <Description>
+      .NET Android binding library for @(Model.Artifact.GradleImplementation)
+    </Description>
+    <PackageTags> xamarin, android, @(Model.Artifact.Group.Id), @(Model.Artifact.Nuget.ArtifactId)</PackageTags>
+    <Authors>@(Model.Artifact.PackageAuthors)</Authors>
+    <Owners>@(Model.Artifact.PackageOwners)</Owners>
+    <Company>N/A</Company>
+    <FileVersion>@(assemblyVersion)</FileVersion>
+    <InformationalVersion>@(Model.Artifact.InformationalVersion)</InformationalVersion>
+    <AssemblyVersion>@(assemblyVersion)</AssemblyVersion>
+    <Copyright>© @(Model.Artifact.CopyrightHolder). All rights reserved.</Copyright>
+    <PackageProjectUrl>@(Model.Artifact.PackageProjectUrl)</PackageProjectUrl>
+    <RepositoryUrl>@(Model.Artifact.RepositoryUrl)</RepositoryUrl>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <PackageIcon>package-icon.png</PackageIcon>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageVersion>@(Model.Artifact.Version.NugetVersion)</PackageVersion>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <AllowedOutputExtensionsInPackageBuildOutputFolder>$(AllowedOutputExtensionsInPackageBuildOutputFolder);.pdb</AllowedOutputExtensionsInPackageBuildOutputFolder>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="@(Model.Artifact.Nuget.PackageId).targets" Pack="True"
+      PackagePath="@@(_TargetFrameworkNugetBuildFolders)" />
+    <None Include="@(packageIconPath)" Pack="True" PackagePath="package-icon.png" />
+    <None Include="LICENSE" Pack="True" PackagePath="" />
+    <None Include="README.md" Pack="True" PackagePath="" />
+  </ItemGroup>
+
+  <ItemGroup>
+    @if (!string.IsNullOrEmpty(Model.Artifact.SourcesJarRelativeFilePath))
+    {
+      <JavaSourceJar Include="$(UserHome)/@(Model.Artifact.SourcesJarRelativeFilePath)"
+        Condition=" '$(OS)' == 'Unix' And Exists('$(UserHome)/@(Model.Artifact.SourcesJarRelativeFilePath)')" />
+      <JavaSourceJar Include="$(UserHome)\@(winSourcesJarRelativeFilePath)"
+        Condition=" '$(OS)' != 'Unix' And Exists('$(UserHome)\@(winSourcesJarRelativeFilePath)')" />
+    }
+    @{
+      var homeFolder = Xamarin.Build.Download.Platform.IsWindows
+      ? System.Environment.SpecialFolder.LocalApplicationData
+      : System.Environment.SpecialFolder.Personal;
+      var homeFolderPath = System.Environment.GetFolderPath(homeFolder);
+      var proguardFilePath = System.IO.Path.Combine(
+      homeFolderPath,
+      Model.Artifact.ProguardFileRelativePath
+      );
+    }
+    @if (!string.IsNullOrEmpty(Model.Artifact.ProguardFileRelativePath)
+        && System.IO.File.Exists(proguardFilePath))
+    {
+      <None Include="@(proguardFilePath)" Pack="True" PackagePath="proguard" />
+    }
+    @if (Model.Artifact.IsAAR)
+    {
+      <InputJar Include="$(UserHome)/@(Model.Artifact.LibFolderPath)/_aar/classes.jar"
+        Condition=" '$(OS)' == 'Unix' And Exists('$(UserHome)/@(Model.Artifact.LibFolderPath)/_aar/classes.jar')" />
+      <InputJar Include="$(UserHome)\@(winLibFolderPath)\_aar\classes.jar"
+        Condition=" '$(OS)' != 'Unix' And Exists('$(UserHome)\@(winLibFolderPath)\_aar\classes.jar')" />
+      <InputJar Condition=" '$(OS)' == 'Unix' And Exists('$(UserHome)/@(Model.Artifact.LibFolderPath)/_aar/libs/')"
+        Include="$(UserHome)/@(Model.Artifact.LibFolderPath)/_aar/libs/*.jar" />
+      <InputJar Condition=" '$(OS)' != 'Unix' And Exists('$(UserHome)\@(winLibFolderPath)\_aar\libs\')"
+        Include="$(UserHome)\@(winLibFolderPath)\_aar\libs\*.jar" />
+    }
+    else if (!string.IsNullOrEmpty(Model.Artifact.LibRelativePath))
+    {
+      <InputJar Include="$(UserHome)/@(Model.Artifact.LibRelativePath)"
+        Condition=" '$(OS)' == 'Unix' And Exists('$(UserHome)/@(Model.Artifact.LibRelativePath)')" />
+      <InputJar Include="$(UserHome)\@(winLibRelativePath)"
+        Condition=" '$(OS)' != 'Unix' And Exists('$(UserHome)\@(winLibRelativePath)')" />
+    }
+    @foreach (var dep in @Model.NuGetDependencies)
+    {
+      if (!dep.Nuget.DependencyOnly)
+      {
+        <ProjectReference Include="..\..\..\@(dep.Group.Id)\@(dep.Nuget.ArtifactId)\binding\@(dep.Nuget.PackageId).csproj"
+          PrivateAssets="none" />
+      }
+    }
+    @foreach (var dep in @Model.PackageReferences)
+    {
+      <PackageReference Include="@(dep.Key)" Version="@(dep.Value)" PrivateAssets="none" />
+    }
+    @foreach (var dep in @Model.Artifact.ManualPackageReferences)
+    {
+      <PackageReference Include="@(dep.Key)" Version="@(dep.Value)" PrivateAssets="none" />
+    }
+  </ItemGroup>
+</Project>

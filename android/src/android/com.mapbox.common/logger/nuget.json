@@ -1,0 +1,5 @@
+{
+  "packageId": "Bindings.Mapbox.Common.Logger",
+  "name": "logger",
+  "dependencyOnly": false
+}

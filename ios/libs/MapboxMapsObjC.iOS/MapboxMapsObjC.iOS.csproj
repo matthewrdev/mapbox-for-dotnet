@@ -1,0 +1,65 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+      <TargetFramework>net10.0-ios</TargetFramework>
+      <Nullable>enable</Nullable>
+      <ImplicitUsings>true</ImplicitUsings>
+      <IsBindingProject>true</IsBindingProject>
+      <NoBindingEmbedding>true</NoBindingEmbedding>
+      <SupportedOSPlatformVersion>15.0</SupportedOSPlatformVersion>
+      <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <PropertyGroup>
+    <_NativeVersion>11.8.0</_NativeVersion>
+    <_NugetSuffix></_NugetSuffix>
+    <_NugetVersion>$(_NativeVersion)$(_NugetSuffix)</_NugetVersion>
+  </PropertyGroup>
+  <PropertyGroup>
+    <RootNamespace>MapboxMapsObjC.iOS</RootNamespace>
+    <IPhoneResourcePrefix>Resources</IPhoneResourcePrefix>
+    <AssemblyName>MapboxMapsObjC.iOS</AssemblyName>
+    <RestoreProjectStyle>PackageReference</RestoreProjectStyle>
+    <AssemblyVersion>$(_NativeVersion)</AssemblyVersion>
+    <FileVersion>$(_NativeVersion)</FileVersion>
+  </PropertyGroup>
+  <PropertyGroup>
+    <PackageId>MapboxMapsObjC.iOS</PackageId>
+    <Title>Mapbox SDK for .NET iOS</Title>
+    <Summary>.NET iOS bindings for Mapbox iOS SDK - MapboxMapsObjC</Summary>
+    <Description>.NET iOS bindings for Mapbox iOS SDK - MapboxMapsObjC</Description>
+    <Authors>tuyen,tuyen-vuduc</Authors>
+    <Owners>tuyen,tuyen-vuduc</Owners>
+    <Copyright>© tuyen-vuduc. All rights reserved.</Copyright>
+    <RepositoryUrl>https://github.com/tuyen-vuduc/mapbox-ios-binding</RepositoryUrl>
+    <PackageProjectUrl>https://mapbox.tuyen-vuduc.tech/</PackageProjectUrl>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <PackageIcon>tv-mapbox.png</PackageIcon>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
+    <PackageVersion>$(_NugetVersion)</PackageVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Include="MapboxMapsObjC.iOS.targets" Pack="True" PackagePath="build/MapboxMapsObjC.iOS.targets" />
+    <None Include="MapboxMapsObjC.iOS.targets" Pack="True" PackagePath="buildTransitive/MapboxMapsObjC.iOS.targets" />
+    <None Include="../../source/External-Dependency-Info.txt" Pack="True" PackagePath="THIRD-PARTY-NOTICES.txt" />
+		<None Include="../../assets/tv-mapbox.png" Pack="True" PackagePath="tv-mapbox.png" />
+		<None Include="../../LICENSE" Pack="True" PackagePath="" />
+		<None Include="../../README.md" Pack="True" PackagePath="README.md" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Resources\" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\MapboxMaps.iOS\MapboxMaps.iOS.csproj">
+    </ProjectReference>
+    <ProjectReference Include="..\MapboxCoreMaps.iOS\MapboxCoreMaps.iOS.csproj">
+    </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ObjcBindingApiDefinition Include="ApiDefinitions.cs" />
+    <ObjcBindingCoreSource Include="StructsAndEnums.cs" />
+  </ItemGroup>
+  <ItemGroup>
+      <PackageReference Include="Xamarin.Build.Download" Version="0.11.4" PrivateAssets="None" />
+  </ItemGroup>
+</Project>

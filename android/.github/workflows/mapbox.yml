@@ -1,0 +1,23 @@
+name: Android Binding Libraries - Mapbox
+run-name: ${{ inputs.LIB_ARTIFACT }} 🚀 NuGet
+on:
+  workflow_dispatch:
+    inputs:
+      LIB_ARTIFACT:
+        description: 'Android library to publish'
+        required: true
+        type: choice
+        options:   
+        - com.mapbox.maps:android-ndk27:11.19.0
+
+jobs:
+  build-then-publish:
+    uses: ./.github/workflows/reusable-android-build.yml
+    with:
+      artifact: ${{ inputs.LIB_ARTIFACT }}
+      dotnet-version: '10.0'
+      java-version: '21'
+      requires-mapbox-token: true
+    secrets:
+      NUGET_PUSH_API_KEY: ${{ secrets.NUGET_PUSH_API_KEY }}
+      MAPBOX_DOWNLOADS_TOKEN: ${{ secrets.MAPBOX_DOWNLOADS_TOKEN }}

@@ -1,0 +1,5 @@
+{
+  "packageId": "Xamarin.GooglePlayServices.CroNet",
+  "name": "play-services-cronet",
+  "dependencyOnly": true
+}

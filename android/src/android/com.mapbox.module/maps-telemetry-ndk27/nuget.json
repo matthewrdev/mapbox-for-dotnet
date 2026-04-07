@@ -1,0 +1,5 @@
+{
+  "packageId": "Bindings.Mapbox.Module.MapsTelemetryNdk27",
+  "name": "maps-telemetry-ndk27",
+  "dependencyOnly": false
+}

@@ -1,0 +1,5 @@
+{
+  "packageId": "Bindings.Mapbox.Plugin.MapsScalebarNdk27",
+  "name": "maps-scalebar-ndk27",
+  "dependencyOnly": false
+}

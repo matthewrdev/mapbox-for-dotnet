@@ -1,0 +1,5 @@
+{
+  "name": "Mapbox",
+  "homePageUrl": "https://docs.mapbox.com/android/maps/guides/",
+  "runtimeDependenciesAsCompile": true
+}

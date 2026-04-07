@@ -1,0 +1,5 @@
+{
+  "packageId": "Bindings.Mapbox.Plugin.MapsViewportNdk27",
+  "name": "maps-viewport-ndk27",
+  "dependencyOnly": false
+}

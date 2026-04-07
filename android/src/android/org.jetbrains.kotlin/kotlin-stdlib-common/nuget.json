@@ -1,0 +1,5 @@
+{
+  "packageId": "Xamarin.Kotlin.StdLib.Common",
+  "name": "kotlin-stdlib-common",
+  "dependencyOnly": true
+}

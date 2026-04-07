@@ -1,0 +1,5 @@
+{
+  "packageId": "Bindings.Mapbox.Maps.AndroidNdk27",
+  "name": "android-ndk27",
+  "dependencyOnly": false
+}

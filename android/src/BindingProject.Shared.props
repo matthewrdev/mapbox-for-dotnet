@@ -1,0 +1,34 @@
+<Project>
+  <Target Name="_CleanAarOutputPath" AfterTargets="_CreateAar" BeforeTargets="_IncludeAarInNuGetPackage">
+    <Delete Files="$(_AarOutputPath)" />
+  </Target>
+
+  <PropertyGroup>
+    <TargetFramework>net10.0-android</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <IsBindingProject>true</IsBindingProject>
+    <AndroidUseIntermediateDesignerFile>false</AndroidUseIntermediateDesignerFile>
+    <UserHome Condition=" '$(OS)' == 'Unix' ">$(Home)</UserHome>
+    <UserHome Condition=" '$(OS)' != 'Unix' ">$(UserProfile)</UserHome>
+    <AndroidSdkDirectory Condition=" '$(AndroidSdkDirectory)' == '' and '$(OS)' == 'Unix' ">$(UserHome)/Library/Android/sdk</AndroidSdkDirectory>
+    <AndroidSdkDirectory Condition=" '$(AndroidSdkDirectory)' == '' and '$(OS)' != 'Unix' ">$(UserHome)\AppData\Local\Android\sdk</AndroidSdkDirectory>
+    <AndroidClassParser>class-parse</AndroidClassParser>
+    <AndroidCodegenTarget>XAJavaInterop1</AndroidCodegenTarget>
+    <AndroidFragmentType>AndroidX.Fragment.App.Fragment</AndroidFragmentType>
+    <NoWarn>$(NoWarn);CS0618;CS0109;CS0114;CS0628;CS0108;CS0809;CS8765;CS8600;BG8606;BG8403;BG8A04;BG8A00;NU5118;BG8102;BG8103;BG8400;XAOBS001;CS8604;CS8603;CS8767;CS8766;CS8764;BG8605;CS8632;CS8618;CS8769</NoWarn>
+    <WarningsAsErrors>BG8401;BG8604;BG8C00;BG8700;BG8800</WarningsAsErrors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <_TargetFrameworkNugetBuildFolders Include="build\net8.0-android34.0" />
+    <_TargetFrameworkNugetBuildFolders Include="buildTransitive\net8.0-android34.0" />
+    <_TargetFrameworkNugetBuildFolders Include="build\net10.0-android36.0" />
+    <_TargetFrameworkNugetBuildFolders Include="buildTransitive\net10.0-android36.0" />
+    <AndroidNamespaceReplacement Include="Kotlinx" Replacement="KotlinX" Visible="false" />
+    <PackageReference Include="Dependencies.Gradle" Version="8.6.0.3" />
+    <TransformFile Include="$(MSBuildThisFileDirectory)Metadata.common.xml">
+      <Link>Transforms/Metadata.common.xml</Link>
+    </TransformFile>
+  </ItemGroup>
+</Project>

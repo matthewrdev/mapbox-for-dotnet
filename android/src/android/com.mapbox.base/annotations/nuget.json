@@ -1,0 +1,5 @@
+{
+  "packageId": "Bindings.Mapbox.Base.Annotations",
+  "name": "annotations",
+  "dependencyOnly": false
+}

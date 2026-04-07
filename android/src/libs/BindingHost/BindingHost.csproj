@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="$(BindingSharedPropsPath)" Condition=" '$(BindingSharedPropsPath)' != '' and Exists('$(BindingSharedPropsPath)')" />
+  <Import Project="$(BindingGroupPropsPath)" Condition=" '$(BindingGroupPropsPath)' != '' and Exists('$(BindingGroupPropsPath)')" />
+  <Import Project="$(BindingArtifactPropsPath)" Condition=" '$(BindingArtifactPropsPath)' != '' and Exists('$(BindingArtifactPropsPath)')" />
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <RunWorkingDirectory>$(MSBuildProjectDirectory)</RunWorkingDirectory>
+    <IsPackable>false</IsPackable>
+    <PreserveCompilationContext>true</PreserveCompilationContext>
+  </PropertyGroup>
+  <PropertyGroup>
+    <AndroidTargetSdkVersion>36</AndroidTargetSdkVersion>
+    <AndroidSdkDirectory Condition=" '$(AndroidSdkDirectory)' == '' and '$(OS)' == 'Unix' ">$(Home)/Library/Android/sdk</AndroidSdkDirectory>
+    <AndroidSdkDirectory Condition=" '$(AndroidSdkDirectory)' == '' and '$(OS)' != 'Unix' ">$(UserProfile)/AppData/Local/Android/sdk</AndroidSdkDirectory>
+  </PropertyGroup>  
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup Condition=" '$(BindingArtifact)' != '' ">
+    <GradleImplementation Include="$(BindingArtifact)" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Cake.Frosting" Version="5.0.0" />
+    <PackageReference Include="Dependencies.Gradle" Version="8.6.0.3" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Binderator.Gradle\Binderator.Gradle.csproj" />
+    <ProjectReference Include="..\DotnetBindings.Cake\DotnetBindings.Cake.csproj" />
+  </ItemGroup>
+  <Target Name="_GradleDependencyResolverTrigger" DependsOnTargets="_GradleSync" BeforeTargets="CoreCompile" />
+</Project>

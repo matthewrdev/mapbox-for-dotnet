@@ -1,0 +1,5 @@
+{
+  "packageId": "Bindings.Mapbox.Plugin.MapsAnnotationNdk27",
+  "name": "maps-annotation-ndk27",
+  "dependencyOnly": false
+}

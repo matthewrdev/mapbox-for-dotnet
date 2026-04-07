@@ -1,0 +1,5 @@
+{
+  "packageId": "Bindings.Mapbox.Extension.MapsLocalizationNdk27",
+  "name": "maps-localization-ndk27",
+  "dependencyOnly": false
+}

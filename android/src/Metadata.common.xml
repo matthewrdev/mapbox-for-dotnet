@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<metadata>
+	<attr
+		path="//field[@name='Companion']"
+		name="managedName">CompanionField</attr>
+  <attr
+    path="//field[@name='CREATOR']"
+    name="managedName">CREATOR</attr>
+  <attr path="//method[@name='getClass' and count(parameter)=0]"
+        name="propertyName"></attr>
+</metadata>

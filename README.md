@@ -1,8 +1,14 @@
 # mapbox-for-dotnet
 
+.NET bindings for Mapbox on iOS and Android.
+
 ## Primary Attribution
 
-This repository is heavily and deliberately based on the work of **Tuyen Vu Duc**.
+This repository is heavily and deliberately based on the work of [**Tuyen Vu Duc**](https://github.com/tuyen-vuduc). 
+
+https://www.linkedin.com/in/tuyen-vuduc/
+https://tuyen-vuduc.tech
+
 The iOS binding work comes directly from:
 
 - [`tuyen-vuduc/mapbox-ios-binding`](https://github.com/tuyen-vuduc/mapbox-ios-binding)
@@ -16,13 +22,13 @@ This repo would not exist in its current form without Tuyen's prior work on the
 binding strategy, the iOS bridge layer, and the practical path for shipping
 Mapbox bindings to .NET developers.
 
+[Please consider sponsoring Tuyen as a thank you for his incredible work building .NET MAUI bindings.](https://github.com/sponsors/tuyen-vuduc)
+
 ## Why An All-In-One Repo
 
-We are building an all-in-one repository so Android bindings, iOS bindings, and
-cross-platform validation live in one place and can be versioned together. That
-reduces drift between platforms, makes packaging and test harnesses consistent,
-and gives .NET app developers a single source tree to build, validate, and
-integrate from.
+We are building an all-in-one repository so Android bindings, iOS bindings, and cross-platform validation live in one place and can be versioned together. 
+
+The goal is to reduce drift between platforms, makes packaging and test harnesses consistent, and gives .NET app developers a single source tree to build, validate, and integrate from.
 
 ## Layout
 

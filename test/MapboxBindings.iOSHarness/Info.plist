@@ -6,8 +6,6 @@
     <string>MapboxBindings.iOSHarness</string>
     <key>CFBundleIdentifier</key>
     <string>com.companyname.MapboxBindings.iOSHarness</string>
-    <key>MBXAccessToken</key>
-    <string>$(MapboxAccessToken)</string>
     <key>CFBundleShortVersionString</key>
     <string>1.0</string>
     <key>CFBundleVersion</key>

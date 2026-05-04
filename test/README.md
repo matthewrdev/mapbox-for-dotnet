@@ -15,9 +15,13 @@ solution.
 - `MAPBOX_DOWNLOADS_TOKEN`: required at build time for Android Mapbox Maven
   artifacts. The current Gradle repository setup reads it from a Gradle
   property, for example `~/.gradle/gradle.properties`.
-- `MAPBOX_ACCESS_TOKEN`: required at runtime for the Android and MAUI map views.
-- `MapboxAccessToken`: optional MSBuild property used by the iOS and MAUI iOS
-  harnesses to populate `MBXAccessToken` in `Info.plist`.
+- `MAPBOX_TESTHARNESS_TOKEN`: public Mapbox access token used by the native
+  Android and iOS test harnesses. Android writes it to a generated string
+  resource; iOS writes it to generated `MBXAccessToken` app manifest metadata.
+- `MAPBOX_ACCESS_TOKEN`: optional runtime override for the Android and MAUI map
+  views.
+- `MapboxAccessToken`: optional MSBuild property override used by iOS harnesses
+  when you do not want to read `MAPBOX_TESTHARNESS_TOKEN` from the environment.
 
 ## Validation Script
 

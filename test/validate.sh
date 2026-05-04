@@ -27,8 +27,8 @@ echo "Building Android harness..."
 dotnet build "${script_dir}/MapboxBindings.AndroidHarness/MapboxBindings.AndroidHarness.csproj" -f net10.0-android
 
 echo "Building iOS harness..."
-if [[ -n "${MAPBOX_ACCESS_TOKEN:-}" ]]; then
-  dotnet build "${script_dir}/MapboxBindings.iOSHarness/MapboxBindings.iOSHarness.csproj" -f net10.0-ios -p:RuntimeIdentifier=iossimulator-arm64 -p:CodesignKey= -p:CodesignProvision= "-p:MapboxAccessToken=${MAPBOX_ACCESS_TOKEN}"
+if [[ -n "${MAPBOX_TESTHARNESS_TOKEN:-}" ]]; then
+  dotnet build "${script_dir}/MapboxBindings.iOSHarness/MapboxBindings.iOSHarness.csproj" -f net10.0-ios -p:RuntimeIdentifier=iossimulator-arm64 -p:CodesignKey= -p:CodesignProvision= "-p:MapboxAccessToken=${MAPBOX_TESTHARNESS_TOKEN}"
 else
   dotnet build "${script_dir}/MapboxBindings.iOSHarness/MapboxBindings.iOSHarness.csproj" -f net10.0-ios -p:RuntimeIdentifier=iossimulator-arm64 -p:CodesignKey= -p:CodesignProvision=
 fi
@@ -37,8 +37,8 @@ echo "Building MAUI Android harness..."
 dotnet build "${script_dir}/MapboxBindings.MauiHarness/MapboxBindings.MauiHarness.csproj" -f net10.0-android
 
 echo "Building MAUI iOS harness..."
-if [[ -n "${MAPBOX_ACCESS_TOKEN:-}" ]]; then
-  dotnet build "${script_dir}/MapboxBindings.MauiHarness/MapboxBindings.MauiHarness.csproj" -f net10.0-ios -p:RuntimeIdentifier=iossimulator-arm64 -p:CodesignKey= -p:CodesignProvision= "-p:MapboxAccessToken=${MAPBOX_ACCESS_TOKEN}"
+if [[ -n "${MAPBOX_TESTHARNESS_TOKEN:-}" ]]; then
+  dotnet build "${script_dir}/MapboxBindings.MauiHarness/MapboxBindings.MauiHarness.csproj" -f net10.0-ios -p:RuntimeIdentifier=iossimulator-arm64 -p:CodesignKey= -p:CodesignProvision= "-p:MapboxAccessToken=${MAPBOX_TESTHARNESS_TOKEN}"
 else
   dotnet build "${script_dir}/MapboxBindings.MauiHarness/MapboxBindings.MauiHarness.csproj" -f net10.0-ios -p:RuntimeIdentifier=iossimulator-arm64 -p:CodesignKey= -p:CodesignProvision=
 fi

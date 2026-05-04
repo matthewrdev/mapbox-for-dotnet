@@ -5,9 +5,37 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>true</ImplicitUsings>
     <SupportedOSPlatformVersion>15.0</SupportedOSPlatformVersion>
-    <MapboxAccessToken Condition="'$(MapboxAccessToken)' == ''">YOUR_MAPBOX_ACCESS_TOKEN</MapboxAccessToken>
+    <MapboxAccessToken Condition="'$(MapboxAccessToken)' == '' and '$(MAPBOX_TESTHARNESS_TOKEN)' != ''">$(MAPBOX_TESTHARNESS_TOKEN)</MapboxAccessToken>
+    <CollectAppManifestsDependsOn>$(CollectAppManifestsDependsOn);_GenerateMapboxAccessTokenManifest</CollectAppManifestsDependsOn>
     <RestoreAdditionalProjectSources>$(RestoreAdditionalProjectSources);../../ios/nugets</RestoreAdditionalProjectSources>
   </PropertyGroup>
+
+  <ItemGroup Condition="'$(MapboxAccessToken)' != ''">
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>MapboxAccessToken</_Parameter1>
+      <_Parameter2>$(MapboxAccessToken)</_Parameter2>
+    </AssemblyAttribute>
+  </ItemGroup>
+
+  <Target
+    Name="_GenerateMapboxAccessTokenManifest"
+    Condition="'$(MapboxAccessToken)' != ''">
+    <PropertyGroup>
+      <GeneratedMapboxAccessTokenManifest>$(IntermediateOutputPath)generated/mapbox/MapboxAccessToken.Info.plist</GeneratedMapboxAccessTokenManifest>
+    </PropertyGroup>
+
+    <MakeDir Directories="$([System.IO.Path]::GetDirectoryName('$(GeneratedMapboxAccessTokenManifest)'))" />
+    <WriteLinesToFile
+      File="$(GeneratedMapboxAccessTokenManifest)"
+      Lines="&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;;&lt;!DOCTYPE plist PUBLIC &quot;-//Apple//DTD PLIST 1.0//EN&quot; &quot;http://www.apple.com/DTDs/PropertyList-1.0.dtd&quot;&gt;;&lt;plist version=&quot;1.0&quot;&gt;;&lt;dict&gt;;  &lt;key&gt;MBXAccessToken&lt;/key&gt;;  &lt;string&gt;$(MapboxAccessToken)&lt;/string&gt;;&lt;/dict&gt;;&lt;/plist&gt;"
+      Overwrite="true"
+      WriteOnlyWhenDifferent="true" />
+
+    <ItemGroup>
+      <PartialAppManifest Include="$(GeneratedMapboxAccessTokenManifest)" />
+      <FileWrites Include="$(GeneratedMapboxAccessTokenManifest)" />
+    </ItemGroup>
+  </Target>
 
   <ItemGroup>
     <PackageReference Include="MapboxMaps.iOS" Version="11.8.0" />

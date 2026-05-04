@@ -46,3 +46,27 @@ Run:
 
 That script repacks the Android and iOS bindings and builds all harness targets
 against the local packages.
+
+## Release Packaging
+
+Double-click `release-nugets.command` in Finder to pack and optionally publish
+the Android and iOS NuGets. From a terminal, run:
+
+```bash
+./release-nugets.sh
+```
+
+The release flow writes platform-local packages to `android/nugets` and
+`ios/nugets`, then copies the publishable set into `products`.
+
+Required environment:
+
+- `MAPBOX_DOWNLOADS_TOKEN`, `ORG_GRADLE_PROJECT_MAPBOX_DOWNLOADS_TOKEN`, or a
+  `MAPBOX_DOWNLOADS_TOKEN` entry in `~/.gradle/gradle.properties` for Android
+  Mapbox Maven artifacts.
+- `MAPBOX_NUGET_KEY` for publishing.
+
+Optional environment:
+
+- `NUGET_SOURCE` to publish somewhere other than `https://api.nuget.org/v3/index.json`.
+- `NUGET_PRODUCTS_DIR` to override the root `products` output folder.

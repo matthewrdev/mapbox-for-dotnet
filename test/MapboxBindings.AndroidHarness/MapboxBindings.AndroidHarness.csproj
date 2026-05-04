@@ -18,4 +18,34 @@
   <ItemGroup>
     <PackageReference Include="Bindings.Mapbox.Maps.AndroidNdk27" Version="11.19.0" />
   </ItemGroup>
+
+  <Target
+    Name="_GenerateMapboxAccessTokenResource"
+    BeforeTargets="_ComputeAndroidResourcePaths"
+    Condition="'$(MAPBOX_TESTHARNESS_TOKEN)' != ''">
+    <PropertyGroup>
+      <GeneratedMapboxAccessTokenResource>$(IntermediateOutputPath)generated/mapbox/Resources/values/mapbox_access_token.xml</GeneratedMapboxAccessTokenResource>
+    </PropertyGroup>
+    <MakeDir Directories="$([System.IO.Path]::GetDirectoryName('$(GeneratedMapboxAccessTokenResource)'))" />
+    <WriteLinesToFile
+      File="$(GeneratedMapboxAccessTokenResource)"
+      Lines="&lt;?xml version=&quot;1.0&quot; encoding=&quot;utf-8&quot;?&gt;;&lt;resources&gt;;  &lt;string name=&quot;mapbox_access_token&quot;&gt;$(MAPBOX_TESTHARNESS_TOKEN)&lt;/string&gt;;&lt;/resources&gt;"
+      Overwrite="true"
+      WriteOnlyWhenDifferent="true" />
+    <ItemGroup>
+      <AndroidResource Include="$(GeneratedMapboxAccessTokenResource)">
+        <Link>Resources/values/mapbox_access_token.xml</Link>
+      </AndroidResource>
+      <FileWrites Include="$(GeneratedMapboxAccessTokenResource)" />
+    </ItemGroup>
+  </Target>
+
+  <Target
+    Name="_RemoveMapboxAccessTokenResource"
+    BeforeTargets="_ComputeAndroidResourcePaths"
+    Condition="'$(MAPBOX_TESTHARNESS_TOKEN)' == ''">
+    <Delete
+      Files="$(IntermediateOutputPath)generated/mapbox/Resources/values/mapbox_access_token.xml;$(IntermediateOutputPath)res/values/mapbox_access_token.xml;$(IntermediateOutputPath)flat/values_mapbox_access_token.arsc.flat"
+      TreatErrorsAsWarnings="true" />
+  </Target>
 </Project>

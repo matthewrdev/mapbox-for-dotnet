@@ -5,6 +5,7 @@ using Android.Views;
 using Android.Views.InputMethods;
 using Android.Widget;
 using AndroidX.AppCompat.App;
+using Com.Mapbox.Bindgen;
 using Com.Mapbox.Common;
 using Com.Mapbox.Maps;
 using System.Globalization;
@@ -16,12 +17,11 @@ namespace MapboxBindings.AndroidHarness;
 public class MainActivity : AppCompatActivity
 {
     private const double DefaultJumpZoom = 14.0;
-    private const double MaximumWebMercatorLatitude = 85.05112878;
     private const double MaximumZoom = 24.0;
     private const double MinimumZoom = 0.0;
-    private const double ZoomStep = 1.0;
 
     private EditText? coordinateEntry;
+    private readonly Dictionary<string, bool> layerGroupVisibility = new(StringComparer.Ordinal);
     private MapView? mapView;
 
     protected override void OnCreate(Bundle? savedInstanceState)
@@ -53,6 +53,8 @@ public class MainActivity : AppCompatActivity
                 ViewGroup.LayoutParams.MatchParent));
 
         root.AddView(CreateCoordinateControls(), CreateCoordinateControlsLayoutParams());
+        root.AddView(CreateStyleControls(), CreateBottomStackLayoutParams(GravityFlags.Bottom | GravityFlags.Left));
+        root.AddView(CreateLayerControls(), CreateBottomStackLayoutParams(GravityFlags.Bottom | GravityFlags.Right));
         SetContentView(root);
     }
 
@@ -131,18 +133,37 @@ public class MainActivity : AppCompatActivity
                 ViewGroup.LayoutParams.MatchParent,
                 ViewGroup.LayoutParams.WrapContent));
 
-        var actionRow = new LinearLayout(this)
+        return controls;
+    }
+
+    private LinearLayout CreateStyleControls() =>
+        CreateIconStack(
+            new IconAction(Resource.Drawable.ic_material_map, "Street style", () => ChangeStyle("Street", Style.MapboxStreets)),
+            new IconAction(Resource.Drawable.ic_material_terrain, "Terrain style", () => ChangeStyle("Terrain", Style.Outdoors)),
+            new IconAction(Resource.Drawable.ic_material_satellite, "Satellite style", () => ChangeStyle("Satellite", Style.SatelliteStreets)));
+
+    private LinearLayout CreateLayerControls() =>
+        CreateIconStack(
+            new IconAction(Resource.Drawable.ic_material_label, "Toggle labels", () => ToggleLayerGroup("labels", IsLabelLayer)),
+            new IconAction(Resource.Drawable.ic_material_polyline, "Toggle lines", () => ToggleLayerGroup("lines", IsLineLayer)),
+            new IconAction(Resource.Drawable.ic_material_view_in_ar, "Toggle 3D", () => ToggleLayerGroup("3d", IsExtrusionLayer)));
+
+    private LinearLayout CreateIconStack(params IconAction[] actions)
+    {
+        var controls = new LinearLayout(this)
         {
-            Orientation = Orientation.Horizontal
+            Orientation = Orientation.Vertical
         };
-        actionRow.AddView(CreateActionButton("-", () => ZoomBy(-ZoomStep)), CreateWeightedButtonLayoutParams());
-        actionRow.AddView(CreateActionButton("+", () => ZoomBy(ZoomStep)), CreateWeightedButtonLayoutParams());
-        actionRow.AddView(CreateActionButton("Random", GenerateRandomCoordinate), CreateWeightedButtonLayoutParams());
-        controls.AddView(
-            actionRow,
-            new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MatchParent,
-                ViewGroup.LayoutParams.WrapContent));
+
+        foreach (var action in actions)
+        {
+            controls.AddView(
+                CreateIconButton(action),
+                new LinearLayout.LayoutParams(Dp(48), Dp(48))
+                {
+                    BottomMargin = Dp(8)
+                });
+        }
 
         return controls;
     }
@@ -157,8 +178,19 @@ public class MainActivity : AppCompatActivity
         return button;
     }
 
-    private static LinearLayout.LayoutParams CreateWeightedButtonLayoutParams() =>
-        new(0, ViewGroup.LayoutParams.WrapContent, 1);
+    private ImageButton CreateIconButton(IconAction action)
+    {
+        var button = new ImageButton(this)
+        {
+            ContentDescription = action.ContentDescription
+        };
+        button.SetImageResource(action.IconResourceId);
+        button.SetColorFilter(Color.Rgb(32, 33, 36));
+        button.SetBackgroundColor(Color.Argb(230, 255, 255, 255));
+        button.SetPadding(Dp(10), Dp(10), Dp(10), Dp(10));
+        button.Click += (_, _) => action.Click();
+        return button;
+    }
 
     private FrameLayout.LayoutParams CreateCoordinateControlsLayoutParams()
     {
@@ -169,6 +201,18 @@ public class MainActivity : AppCompatActivity
             Gravity = GravityFlags.Top
         };
         layoutParams.SetMargins(Dp(8), Dp(8), Dp(8), 0);
+        return layoutParams;
+    }
+
+    private FrameLayout.LayoutParams CreateBottomStackLayoutParams(GravityFlags gravity)
+    {
+        var layoutParams = new FrameLayout.LayoutParams(
+            ViewGroup.LayoutParams.WrapContent,
+            ViewGroup.LayoutParams.WrapContent)
+        {
+            Gravity = gravity
+        };
+        layoutParams.SetMargins(Dp(12), 0, Dp(12), Dp(12));
         return layoutParams;
     }
 
@@ -196,50 +240,73 @@ public class MainActivity : AppCompatActivity
         HideKeyboard();
     }
 
-    private void ZoomBy(double delta)
+    private void ChangeStyle(string label, string styleUri)
     {
         if (mapView?.MapboxMap is not { } mapboxMap)
         {
             return;
         }
 
-        var cameraState = mapboxMap.CameraState;
-        var cameraOptions = new CameraOptions.Builder()
-            .Center(cameraState.Center)
-            ?.Zoom(Java.Lang.Double.ValueOf(Math.Clamp(cameraState.Zoom + delta, MinimumZoom, MaximumZoom)))
-            ?.Bearing(Java.Lang.Double.ValueOf(cameraState.Bearing))
-            ?.Pitch(Java.Lang.Double.ValueOf(cameraState.Pitch))
-            ?.Padding(cameraState.Padding)
-            ?.Build();
-
-        if (cameraOptions is null)
+        layerGroupVisibility.Clear();
+        mapboxMap.LoadStyleUri(styleUri, _ =>
         {
-            return;
-        }
-
-        mapboxMap.SetCamera(cameraOptions);
+            Toast.MakeText(this, label, ToastLength.Short)?.Show();
+        });
     }
 
-    private void GenerateRandomCoordinate()
+    private void ToggleLayerGroup(string groupKey, Func<StyleObjectInfo, bool> layerMatcher)
     {
-        var latitude = NextRandomDouble(-MaximumWebMercatorLatitude, MaximumWebMercatorLatitude);
-        var longitude = NextRandomDouble(-180, 180);
-
-        var coordinateText = string.Format(
-            CultureInfo.InvariantCulture,
-            "{0:F4},{1:F4}",
-            latitude,
-            longitude);
-        if (coordinateEntry is null)
+        if (mapView?.MapboxMap is not { } mapboxMap)
         {
             return;
         }
 
-        coordinateEntry.Text = coordinateText;
-        coordinateEntry?.SetSelection(coordinateText.Length);
+        mapboxMap.GetStyle(style =>
+        {
+            var shouldShow = layerGroupVisibility.TryGetValue(groupKey, out var isVisible) && !isVisible;
+            var changedLayerCount = SetLayerGroupVisibility(style, layerMatcher, shouldShow);
+            layerGroupVisibility[groupKey] = shouldShow;
 
-        JumpToCoordinate();
+            Toast.MakeText(
+                this,
+                $"{(shouldShow ? "Show" : "Hide")} {changedLayerCount} layer(s)",
+                ToastLength.Short)?.Show();
+        });
     }
+
+    private static int SetLayerGroupVisibility(
+        Style style,
+        Func<StyleObjectInfo, bool> layerMatcher,
+        bool isVisible)
+    {
+        var visibility = new Value(isVisible ? "visible" : "none");
+        var changedLayerCount = 0;
+
+        foreach (var layer in style.StyleLayers.Where(layerMatcher))
+        {
+            if (!style.StyleLayerExists(layer.Id))
+            {
+                continue;
+            }
+
+            var result = style.SetStyleLayerProperty(layer.Id, "visibility", visibility);
+            if (!result.IsError)
+            {
+                changedLayerCount++;
+            }
+        }
+
+        return changedLayerCount;
+    }
+
+    private static bool IsLabelLayer(StyleObjectInfo layer) =>
+        string.Equals(layer.Type, "symbol", StringComparison.OrdinalIgnoreCase);
+
+    private static bool IsLineLayer(StyleObjectInfo layer) =>
+        string.Equals(layer.Type, "line", StringComparison.OrdinalIgnoreCase);
+
+    private static bool IsExtrusionLayer(StyleObjectInfo layer) =>
+        string.Equals(layer.Type, "fill-extrusion", StringComparison.OrdinalIgnoreCase);
 
     private static bool TryParseCoordinate(
         string coordinateText,
@@ -287,6 +354,5 @@ public class MainActivity : AppCompatActivity
     private int Dp(int value) =>
         (int)(value * (Resources?.DisplayMetrics?.Density ?? 1f) + 0.5f);
 
-    private static double NextRandomDouble(double minimum, double maximum) =>
-        minimum + (Random.Shared.NextDouble() * (maximum - minimum));
+    private sealed record IconAction(int IconResourceId, string ContentDescription, Action Click);
 }

@@ -3,6 +3,12 @@
 @using System.Xml.Linq
 @{
   var conditionName = "_" + Model.Artifact.Nuget.PackageId.Replace(".", string.Empty);
+  var noJniPreloadLibraries = Model.Artifact.Key switch
+  {
+    "com.mapbox.common:common-ndk27" => new[] { "libmapbox-common.so" },
+    "com.mapbox.maps:android-core-ndk27" => new[] { "libmapbox-maps.so" },
+    _ => new string[0]
+  };
 }
 <?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
@@ -45,6 +51,13 @@
       Visible="False">
       <AndroidXSkipAndroidXMigration>true</AndroidXSkipAndroidXMigration>
     </AndroidLibrary>
+  </ItemGroup>
+}
+@if (noJniPreloadLibraries.Length > 0) {
+  <ItemGroup Condition=" '$(AndroidApplication)' == 'true' ">
+@foreach (var library in noJniPreloadLibraries) {
+    <AndroidNativeLibraryNoJniPreload Include="@(library)" />
+}
   </ItemGroup>
 }
   @* </Target> *@

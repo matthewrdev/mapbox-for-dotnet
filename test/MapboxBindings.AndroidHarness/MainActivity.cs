@@ -1,12 +1,13 @@
 using Android.App;
 using Android.OS;
+using AndroidX.AppCompat.App;
 using Com.Mapbox.Common;
 using Com.Mapbox.Maps;
 
 namespace MapboxBindings.AndroidHarness;
 
-[Activity(Label = "@string/app_name", MainLauncher = true)]
-public class MainActivity : Activity
+[Activity(Label = "@string/app_name", MainLauncher = true, Theme = "@style/AppTheme")]
+public class MainActivity : AppCompatActivity
 {
     private MapView? mapView;
 
@@ -14,10 +15,19 @@ public class MainActivity : Activity
     {
         base.OnCreate(savedInstanceState);
 
-        MapboxOptions.AccessToken = System.Environment.GetEnvironmentVariable("MAPBOX_ACCESS_TOKEN")
+        MapboxOptions.AccessToken = Intent?.GetStringExtra("MAPBOX_ACCESS_TOKEN")
+            ?? System.Environment.GetEnvironmentVariable("MAPBOX_ACCESS_TOKEN")
             ?? "YOUR_MAPBOX_ACCESS_TOKEN";
 
-        mapView = new MapView(this, new MapInitOptions(this));
+        var mapInitOptions = new MapInitOptions(
+            this,
+            MapInitOptions.CompanionField.GetDefaultMapOptions(this),
+            MapInitOptions.CompanionField.DefaultPluginList,
+            cameraOptions: null,
+            textureView: false,
+            styleUri: Style.Outdoors);
+
+        mapView = new MapView(this, mapInitOptions);
         SetContentView(mapView);
     }
 

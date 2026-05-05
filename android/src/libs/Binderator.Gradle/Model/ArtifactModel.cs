@@ -5,7 +5,7 @@ public class ArtifactModel : IEquatable<ArtifactModel>
     public string PackageAuthors => "Matthew Robbins";
     public string PackageOwners => "Matthew Robbins";
     public string CopyrightHolder => "Matthew Robbins";
-    public string PackageProjectUrl => "https://github.com/matthewrobbins/android-mapbox-bindings";
+    public string PackageProjectUrl => "https://github.com/matthewrdev/mapbox-for-dotnet";
     public string MaintainerDisplayName => "Matthew Robbins";
     public string MaintainerUrl => "https://www.nuget.org/profiles/matthewrobbins";
     public IEnumerable<KeyValuePair<string, string>> ManualPackageReferences => Group?.Id == "com.mapbox.base"
@@ -31,7 +31,7 @@ public class ArtifactModel : IEquatable<ArtifactModel>
         Version.NugetVersion}-{
         DateTime.Today.DayOfYear}{
         DateTime.Now.TimeOfDay.Hours:D2}";
-    public string RepositoryUrl => $"{PackageProjectUrl}/tree/main/src/android/{Group.Id}/{Nuget.ArtifactId}";
+    public string RepositoryUrl => $"{PackageProjectUrl}/tree/main/android/src/android/{Group.Id}/{Nuget.ArtifactId}";
     public string Packaging { get; set; }
     public string[] Files { get; set; }
 

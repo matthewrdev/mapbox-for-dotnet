@@ -14,8 +14,8 @@
         <PackageVersion>7.6.0</PackageVersion>
         <PackageId>Binderator.Gradle</PackageId>
         <Title>Binderator.Gradle</Title>
-        <PackageDescription>An util to make use of gradle to resolve native dependcies of the binding libraries</PackageDescription>
-        <PackageProjectUrl>https://github.com/matthewrobbins/android-mapbox-bindings</PackageProjectUrl>
+        <PackageDescription>A utility for using Gradle to resolve native dependencies for binding libraries</PackageDescription>
+        <PackageProjectUrl>https://github.com/matthewrdev/mapbox-for-dotnet</PackageProjectUrl>
         <PackageIcon>tv-ico.png</PackageIcon>
         <PackageLicenseFile>LICENSE</PackageLicenseFile>
         <PackageTags>dotnet, gradle, .net-android, android, bindings, mapbox</PackageTags>

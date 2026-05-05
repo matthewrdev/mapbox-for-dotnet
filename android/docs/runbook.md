@@ -16,15 +16,20 @@ MAPBOX_DOWNLOADS_TOKEN=your_token_here
 
 ### 1. Pick the root artifact
 
-Current root:
+Current checked-in root:
 
 ```text
 com.mapbox.maps:android-ndk27:11.19.0
 ```
 
+This is the repository's current Android binding root. Check the upstream
+Mapbox Android docs before choosing the next target version.
+
 Update `.github/workflows/mapbox.yml` first so the workflow input matches the version you are preparing.
 
 ### 2. Regenerate the graph
+
+Run from the `android` folder:
 
 ```bash
 sh bind.sh --artifact com.mapbox.maps:android-ndk27:<version>

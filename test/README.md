@@ -12,9 +12,10 @@ solution.
 
 ## Required Tokens
 
-- `MAPBOX_DOWNLOADS_TOKEN`: required at build time for Android Mapbox Maven
-  artifacts. The current Gradle repository setup reads it from a Gradle
-  property, for example `~/.gradle/gradle.properties`.
+- `MAPBOX_DOWNLOADS_TOKEN`: required for Mapbox native downloads. Android also
+  accepts it through Gradle properties, for example
+  `~/.gradle/gradle.properties`; iOS package targets read it directly as an
+  environment/MSBuild property.
 - `MAPBOX_TESTHARNESS_TOKEN`: public Mapbox access token used by the native
   Android and iOS test harnesses. Android writes it to a generated string
   resource; iOS writes it to generated `MBXAccessToken` app manifest metadata.
@@ -33,6 +34,9 @@ Run the repo-local validation flow with:
 
 That script repacks the Android and iOS bindings into the local `nugets`
 folders, clears stale NuGet cache entries, and builds all four harness targets.
+Use a real `MAPBOX_DOWNLOADS_TOKEN` environment variable for clean iOS harness
+builds; a Gradle-only token is enough for Android resolution but not for iOS
+native package downloads.
 
 ## Build Commands
 

@@ -1,6 +1,8 @@
 # Architecture
 
-This repo has one job: resolve a selected Android Mapbox Maven graph, map it into `.NET` binding projects, and pack that graph into NuGet packages.
+The Android workspace has one job: resolve a selected Android Mapbox Maven
+graph, map it into `.NET` binding projects, and pack that graph into NuGet
+packages.
 
 ## Flow
 
@@ -48,7 +50,7 @@ Those inputs drive the Gradle resolution pass before the Cake tasks run.
 
 Configuration is intentionally split into a few narrow layers.
 
-### Shared repo defaults
+### Shared Android defaults
 
 - `src/BindingProject.Shared.props`
   Common MSBuild defaults for every generated binding project.
@@ -95,7 +97,7 @@ Treat the tree like this:
 
 ## Where Complexity Lives
 
-Most of the repo is data. The real complexity lives in four places:
+Most of the Android workspace is data. The real complexity lives in four places:
 
 1. `Dependencies.Gradle`
    Gradle resolution into the local cache.

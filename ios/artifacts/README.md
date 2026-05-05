@@ -2,8 +2,8 @@
 
 ## Xcode Installation Instructions
 
-1. Please drag the following 5 XCFrameworks (included in this archive) to your
-   Xcode project and add them to your application target.
+1. Please drag the following 4 Mapbox XCFrameworks from the official SDK archive
+   to your Xcode project and add them to your application target.
 
     - `MapboxCommon.xcframework`
     - `MapboxCoreMaps.xcframework`
@@ -13,9 +13,14 @@
 2. On the General tab for the target, scroll to the section labeled "Frameworks,
    Libraries and Embedded Content".
 
-3. Ensure `Embed` is set to "Embed & Sign" for all 5 linked XCFrameworks.
+3. Ensure `Embed` is set to "Embed & Sign" for all 4 linked Mapbox
+   XCFrameworks.
 
 4. Add `import MapboxMaps` to your Swift source file.
 
 5. Please see the [Migration Guide](https://docs.mapbox.com/ios/maps/guides/migrate-to-v11/)
    for further guidelines.
+
+This repository also tracks headers for `MapboxMapObjC.xcframework`, the
+separate Objective-C bridge used by the .NET binding. That bridge is not part of
+the official Mapbox Maps SDK archive.

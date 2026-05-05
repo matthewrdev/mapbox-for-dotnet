@@ -28,13 +28,26 @@ Mapbox bindings to .NET developers.
 
 We are building an all-in-one repository so Android bindings, iOS bindings, and cross-platform validation live in one place and can be versioned together. 
 
-The goal is to reduce drift between platforms, makes packaging and test harnesses consistent, and gives .NET app developers a single source tree to build, validate, and integrate from.
+The goal is to reduce drift between platforms, make packaging and test harnesses
+consistent, and give .NET app developers a single source tree to build,
+validate, and integrate from.
 
 ## Layout
 
 - [android](./android): Android binding sources, shared build props, generated solution, and local NuGet output.
 - [ios](./ios): iOS binding sources, imported bridge code, and local NuGet output.
 - [test](./test): Native Android, native iOS, and MAUI harness apps used to validate integration.
+
+## Current Binding Pins
+
+- Android graph root: `com.mapbox.maps:android-ndk27:11.19.0`.
+- iOS packages: `Bindings.Mapbox.iOS`,
+  `Bindings.Mapbox.iOS.CoreMaps`, and `Bindings.Mapbox.iOS.MapsObjC` `11.8.0`;
+  `Bindings.Mapbox.iOS.Common` `24.8.0`; and `Bindings.Mapbox.iOS.Turf`
+  `3.0.0`.
+
+These are the versions currently bound in this repository, not a statement that
+they are the latest upstream Mapbox SDKs.
 
 ## Validation
 
@@ -61,9 +74,10 @@ The release flow writes platform-local packages to `android/nugets` and
 
 Required environment:
 
-- `MAPBOX_DOWNLOADS_TOKEN`, `ORG_GRADLE_PROJECT_MAPBOX_DOWNLOADS_TOKEN`, or a
-  `MAPBOX_DOWNLOADS_TOKEN` entry in `~/.gradle/gradle.properties` for Android
-  Mapbox Maven artifacts.
+- `MAPBOX_DOWNLOADS_TOKEN` for Mapbox native downloads. The Android scripts also
+  accept `ORG_GRADLE_PROJECT_MAPBOX_DOWNLOADS_TOKEN` or a `MAPBOX_DOWNLOADS_TOKEN`
+  entry in `~/.gradle/gradle.properties` for Gradle/Maven resolution, but iOS
+  app and harness builds read `MAPBOX_DOWNLOADS_TOKEN` directly.
 - `MAPBOX_NUGET_KEY` for publishing.
 
 Optional environment:

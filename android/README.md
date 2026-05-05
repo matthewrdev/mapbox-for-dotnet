@@ -1,14 +1,15 @@
-# android-mapbox-bindings
+# Android Mapbox Bindings
 
-`android-mapbox-bindings` is a focused repo for generating and publishing the Android Mapbox binding set.
+This folder owns the Android side of `mapbox-for-dotnet`: resolving the Mapbox
+Maven graph, generating .NET Android binding projects, and packing the Android
+NuGet set.
 
 ## Primary Attribution
 
 This Android binding work is directly based on the binding-generation approach
 created by **Tuyen Vu Duc** in
 [`tuyen-vuduc/dotnet-binding-utils`](https://github.com/tuyen-vuduc/dotnet-binding-utils/tree/main).
-The structure in this folder is part of a larger `mapbox-for-dotnet` effort, but
-the underlying generation strategy and practical foundation came from Tuyen's
+The underlying generation strategy and practical foundation came from Tuyen's
 work.
 
 ## What Is Source-Owned
@@ -34,7 +35,9 @@ Empty `Additions.cs` and empty `Metadata.xml` placeholders are no longer kept. I
 
 ## Main Commands
 
-Generate or regenerate the current graph:
+Run these commands from this `android` folder.
+
+Generate or regenerate the checked-in graph:
 
 ```bash
 sh bind.sh --artifact com.mapbox.maps:android-ndk27:11.19.0

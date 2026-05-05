@@ -1,5 +1,8 @@
-# Mapbox for Xamarin.iOS
-A Xamarin.iOS binding library for [Mapbox](https://www.mapbox.com/ios-sdk/) library.
+# iOS Mapbox Bindings
+
+This folder owns the iOS side of `mapbox-for-dotnet`: .NET iOS binding
+projects for Mapbox's native SDK frameworks, the Objective-C bridge binding,
+and the quickstart solution used to smoke-test the packaged NuGets.
 
 ## Primary Attribution
 
@@ -8,78 +11,103 @@ This iOS binding work is based directly on **Tuyen Vu Duc's** repositories:
 - [`tuyen-vuduc/mapbox-ios-binding`](https://github.com/tuyen-vuduc/mapbox-ios-binding)
 - [`tuyen-vuduc/mapbox-ios-objective-c`](https://github.com/tuyen-vuduc/mapbox-ios-objective-c)
 
-This folder is included inside `mapbox-for-dotnet` to keep Android, iOS, and
-test harness validation together, but the binding itself and the Objective-C
-bridge strategy come from Tuyen's work.
+The binding itself and the Objective-C bridge strategy come from Tuyen's work.
+This folder keeps that work together with the Android bindings and shared test
+harnesses in `mapbox-for-dotnet`.
 
-## About
-This project is maintained by [tuyen-vuduc](https://github.com/tuyen-vuduc).<br> 
-At the momment, I don't have free time to contribute to the project, but if there is a paid request, I am happy to talk to.
+## Current Binding Set
 
-## Installation
+The checked-in iOS binding is still on the Mapbox `11.8.0` stack:
 
-```
-Install-Package MapboxMapObjC.iOS
-```
+| Project | Package | Current version |
+| --- | --- | ---: |
+| `MapboxMaps.iOS` | `Bindings.Mapbox.iOS` | `11.8.0` |
+| `MapboxCoreMaps.iOS` | `Bindings.Mapbox.iOS.CoreMaps` | `11.8.0` |
+| `MapboxMapsObjC.iOS` | `Bindings.Mapbox.iOS.MapsObjC` | `11.8.0` |
+| `MapboxCommon.iOS` | `Bindings.Mapbox.iOS.Common` | `24.8.0` |
+| `Turf.iOS` | `Bindings.Mapbox.iOS.Turf` | `3.0.0` |
 
-## Usage
+All binding projects target `net10.0-ios` and set
+`SupportedOSPlatformVersion` to `15.0`.
 
-- 1/ How to use: Please follow the official guide [here](https://www.mapbox.com/ios-sdk/).
-- 2/ Create `Mapbox.iOSQs.props` file from `Mapbox.iOSQs.props.template`
-```
-// It will look like this
-- Mapbox.iOSQS
-  |- Mapbox.iOSQs.csproj
-  |- Mapbox.iOSQs.props
-```
-- 3/ Replace `YOUR_MAPBOX_DOWNLOADS_TOKEN` with your real token from Mapbox
-```
-<MAPBOX_DOWNLOADS_TOKEN>YOUR_MAPBOX_DOWNLOADS_TOKEN</MAPBOX_DOWNLOADS_TOKEN>
-```
+## Package Use
 
-- 4/ Add [your Mapbox access token](https://account.mapbox.com/) to the ignored `Mapbox.iOSQs.props` file
-```
-<MapboxAccessToken>YOUR_MAPBOX_ACCESS_TOKEN</MapboxAccessToken>
+For a map-view app, reference the Mapbox Maps package and the Objective-C bridge
+package. The remaining iOS packages are pulled in by package dependencies.
+
+```bash
+dotnet add package Bindings.Mapbox.iOS --version 11.8.0
+dotnet add package Bindings.Mapbox.iOS.MapsObjC --version 11.8.0
 ```
 
-## How to upgrade
-It takes time to do the binding library and/or upgrade it. Microsoft intends to make it a lot simpler in the future, but not now.
+Consumer app builds need:
 
-Here are steps if you want to make changes and/or upgrade to the libraries
+- `MAPBOX_DOWNLOADS_TOKEN`: secret Mapbox downloads token used by the package
+  targets to download `MapboxMaps.zip`.
+- `MapboxAccessToken`: public Mapbox access token MSBuild property, or an
+  `MBXAccessToken` app manifest entry, for runtime tile access.
 
-- 1/ Download latest artifacts from Mapbox as per its installation guide
-- 2/ Run `chmod +x ./gen.sh`
-- 3/ Run `./gen.sh`
-- 4/ Compile and correct any errors shown up
-- 5/ Update `AssemblyInfo.cs` files with the right version number
-- 6/ Update `*.nuspec` files to have the right version number
-- 7/ Run `sh build.sh` to create nuget packages
-- 8/ Commit and create a PR
+The package targets currently download Mapbox's native `MapboxMaps.zip` archive
+with `Xamarin.Build.Download`. `MapboxMapsObjC.iOS` downloads the separate
+`MapboxMapObjC.xcframework` bridge from the Google Drive file id encoded in
+`ios/libs/MapboxMapsObjC.iOS/MapboxMapsObjC.iOS.targets`.
 
-## NOTES
-- Check symbols in the lib
+## Quickstart
+
+Create the ignored quickstart props file from the template:
+
+```bash
+cp ios/qs/Mapbox.iOSQs/Mapbox.iOSQs.props.template \
+  ios/qs/Mapbox.iOSQs/Mapbox.iOSQs.props
 ```
-nm -m 'artifacts/MapboxMaps.xcframework/ios-arm64/MapboxMaps.framework/MapboxMaps' | grep '_TtC10MapboxMaps22AnyTouchGestureHandler'
+
+Then fill in:
+
+```xml
+<MAPBOX_DOWNLOADS_TOKEN>sk...</MAPBOX_DOWNLOADS_TOKEN>
+<MapboxAccessToken>pk...</MapboxAccessToken>
 ```
 
-## IMPROTANT
-Mapbox SDK for iOS now is written in Swift and not very compatible with Objective-C, hence it won't be that friendly when doing the binding.
-I have to create [an additional framework to make the bridge between Swift & C# in Objective-C](https://github.com/tuyen-vuduc/mapbox-ios-objective-c), it's really a time consuming task.
-It'll require support from the developers like you in the community.
+Build the quickstart from the repo root:
 
-## Further
-Check out [the document site](https://mapbox.tuyen-vuduc.tech) for further details.
+```bash
+dotnet build ios/qs/Mapbox.iOSQs/Mapbox.iOSQs.csproj \
+  -f net10.0-ios \
+  -p:RuntimeIdentifier=iossimulator-arm64 \
+  -p:CodesignKey= \
+  -p:CodesignProvision=
+```
 
-## Maintainer
-This project is maintained by [tuyen-vuduc](https://github.com/tuyen-vuduc) in his spare time and/or when requested.<br>
+## Build Packages
 
-If you find this project is helpful, please give it a star, become a sponsor of the project and/or buy him a coffee.
+From the repo root:
 
-[!["Buy Me A Coffee"](https://www.buymeacoffee.com/assets/img/custom_images/orange_img.png)](https://www.buymeacoffee.com/tuyen.vuduc)
+```bash
+dotnet pack ios/mapbox-ios.sln -c Release -t:Clean,Rebuild --output ios/nugets
+```
+
+The current package build succeeds locally with warnings from generated binding
+code about hidden inherited members. Those warnings are expected for the current
+hand-reconciled binding surface.
+
+## Regeneration And Upgrade Notes
+
+`ios/gen.sh` is a Sharpie helper, not a full upgrade pipeline. Current behavior:
+
+- It hardcodes `SDK=iphoneos17.4`.
+- It only invokes binding generation for `MapboxCommon`.
+- The other framework bind calls are commented out.
+
+Use [MAPBOX_IOS_SDK_AUDIT.md](./MAPBOX_IOS_SDK_AUDIT.md) as the current upgrade
+runbook before attempting to move beyond the `11.8.0` stack. The key blocker is
+the Objective-C bridge: Mapbox does not ship `MapboxMapObjC.xcframework`, so it
+must be rebuilt and republished for the target Mapbox SDK version before the
+managed bridge package can be updated safely.
 
 ## License
 
-Mapbox binding library for iOS itself is released under the 3-Clause BSD license.
-See [LICENSE](./LICENSE) for details.
+The binding code is released under the 3-Clause BSD license. See
+[LICENSE](./LICENSE) for details.
 
-This license doesn't override and/or replace [the licence from Mapbox](./artifacts/LICENSE.md).
+This license does not override or replace the Mapbox native SDK license in
+[artifacts/LICENSE.md](./artifacts/LICENSE.md).

@@ -13,13 +13,13 @@
     <PackageVersion>8.6.0.3</PackageVersion>
     <Authors>Matthew Robbins</Authors>
     <Owners>Matthew Robbins</Owners>
-    <PackageProjectUrl>https://github.com/matthewrobbins/android-mapbox-bindings</PackageProjectUrl>
+    <PackageProjectUrl>https://github.com/matthewrdev/mapbox-for-dotnet</PackageProjectUrl>
     <PackageIcon>tv-ico.png</PackageIcon>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <Description>To resolve Android dependencies using Gradle when building an Android app project</Description>
     <Copyright>© Matthew Robbins. All rights reserved.</Copyright>
-    <RepositoryUrl>https://github.com/matthewrobbins/android-mapbox-bindings.git</RepositoryUrl>
+    <RepositoryUrl>https://github.com/matthewrdev/mapbox-for-dotnet.git</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
   </PropertyGroup>
   <ItemGroup>

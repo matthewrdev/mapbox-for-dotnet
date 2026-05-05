@@ -51,13 +51,18 @@ The version pins are duplicated across project files and `.targets` files, so a 
   - `Turf.xcframework.zip` `4.0.0`
 - Confirmed the existing iOS package build succeeds at the current pinned versions with:
   - `dotnet pack ios/mapbox-ios.sln -c Release -t:Clean,Rebuild --output ios/nugets`
-- Confirmed app-level verification is currently blocked by the local toolchain:
-  - Installed Xcode: `26.0`
+  - Local .NET SDK: `10.0.201`
+  - Installed Xcode: `26.3`
+  - Active iPhoneOS/iPhoneSimulator SDK: `26.2`
   - Installed .NET iOS workload: `26.2.10233`
-  - The workload requires Xcode `26.3` for iOS simulator/app builds.
-- Confirmed `sharpie` is installed locally.
+  - The build still emits expected generated binding warnings about hidden
+    inherited members.
+- Confirmed app-level verification is not currently runnable from a clean
+  environment because `MAPBOX_DOWNLOADS_TOKEN`, `MAPBOX_ACCESS_TOKEN`, and
+  `MAPBOX_TESTHARNESS_TOKEN` are not set locally. A cached native download may
+  hide that in some builds, but a clean app or harness build needs the token.
+- Confirmed `sharpie` is installed locally: `3.5.61-c2b0b612`.
 - Confirmed CocoaPods is not installed locally.
-- Confirmed `MAPBOX_DOWNLOADS_TOKEN` and `MAPBOX_ACCESS_TOKEN` are not set in the local environment.
 
 ## Required Work
 
@@ -149,7 +154,8 @@ Verification should include:
 - Launch an iOS simulator harness and confirm a map renders with a valid `MBXAccessToken`.
 - Confirm native downloads work from a clean NuGet/XamarinBuildDownload cache using `MAPBOX_DOWNLOADS_TOKEN`.
 
-Local verification currently requires upgrading Xcode to the version expected by the installed .NET iOS workload.
+Local app-level verification currently requires valid Mapbox tokens. No local
+Xcode version mismatch is present in this checkout.
 
 ## Completion Criteria
 
@@ -162,4 +168,6 @@ The iOS Mapbox SDK update should be considered complete only when:
 - NuGet packages are produced for the updated versions.
 - At least one iOS app harness builds and renders a Mapbox map on simulator/device.
 
-Until the Objective-C bridge is rebuilt and app-level validation runs on a compatible Xcode, the update should not be published as complete.
+Until the Objective-C bridge is rebuilt and app-level validation runs with valid
+Mapbox tokens on simulator/device, the update should not be published as
+complete.

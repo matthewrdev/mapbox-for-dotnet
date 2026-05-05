@@ -1,7 +1,9 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using CoreGraphics;
 using CoreLocation;
+using Foundation;
 using MapboxMaps;
 using MapboxMapsObjC;
 using UIKit;
@@ -13,13 +15,20 @@ public sealed class MapboxViewController : UIViewController
     private const double DefaultJumpZoom = 14.0;
     private const double MaximumZoom = 24.0;
     private const double MinimumZoom = 0.0;
+    private const string Smoke3DLayerId = "dotnet-smoke-3d-buildings";
+    private const string Smoke3DLayerSourceId = "composite";
+    private const string Smoke3DLayerSourceLayer = "building";
+    private const string SmokeTerrainSourceId = "dotnet-smoke-terrain-dem";
+    private const string SmokeTerrainSourceUrl = "mapbox://mapbox.mapbox-terrain-dem-v1";
 
+    private readonly List<SmokeTestResult> smokeResults = new();
     private UITextField? coordinateEntry;
     private double currentZoom = SmokeTestRunner.DefaultZoom;
     private CLLocationCoordinate2D currentCenter = new(SmokeTestRunner.DefaultLatitude, SmokeTestRunner.DefaultLongitude);
     private UILabel? messageLabel;
     private MapView? mapView;
     private TMBMapboxMap? mapboxMap;
+    private UITextView? statusOverlay;
 
     public override void ViewDidLoad()
     {
@@ -33,7 +42,8 @@ public sealed class MapboxViewController : UIViewController
 
         view.BackgroundColor = UIColor.SystemBackground;
 
-        var results = SmokeTestRunner.RunStartupChecks().ToList();
+        smokeResults.Clear();
+        smokeResults.AddRange(SmokeTestRunner.RunStartupChecks());
 
         try
         {
@@ -41,17 +51,17 @@ public sealed class MapboxViewController : UIViewController
             mapView.AutoresizingMask = UIViewAutoresizing.FlexibleWidth | UIViewAutoresizing.FlexibleHeight;
             mapboxMap = mapView.MapboxMap();
             view.AddSubview(mapView);
-            results.Add(SmokeTestRunner.Pass("Map view startup", "MapViewFactory created and attached a MapView."));
+            smokeResults.Add(SmokeTestRunner.Pass("Map view startup", "MapViewFactory created and attached a MapView."));
         }
         catch (Exception exception)
         {
-            results.Add(SmokeTestRunner.Fail("Map view startup", $"{exception.GetType().Name}: {exception.Message}"));
+            smokeResults.Add(SmokeTestRunner.Fail("Map view startup", $"{exception.GetType().Name}: {exception.Message}"));
         }
 
-        LogResults(results);
+        LogResults(smokeResults);
 
         var coordinateControls = CreateCoordinateControls();
-        var statusOverlay = CreateStatusOverlay(results);
+        statusOverlay = CreateStatusOverlay(smokeResults);
         var styleControls = CreateStyleControls();
         var zoomControls = CreateZoomControls();
         messageLabel = CreateMessageLabel();
@@ -84,6 +94,8 @@ public sealed class MapboxViewController : UIViewController
             messageLabel.BottomAnchor.ConstraintEqualTo(styleControls.TopAnchor, -12),
             messageLabel.WidthAnchor.ConstraintLessThanOrEqualTo(view.SafeAreaLayoutGuide.WidthAnchor, 0.82f)
         });
+
+        Run3DSmokeChecks();
     }
 
     private UIView CreateCoordinateControls()
@@ -125,7 +137,7 @@ public sealed class MapboxViewController : UIViewController
     private UIView CreateStyleControls() =>
         CreateButtonStack(
             new ControlAction("Map", "Street style", () => ChangeStyle("Street", BuiltInStyles.Streets)),
-            new ControlAction("Ter", "Terrain style", () => ChangeStyle("Terrain", BuiltInStyles.Outdoors)),
+            new ControlAction("Ter", "3D terrain", () => EnableTerrain(false)),
             new ControlAction("Sat", "Satellite style", () => ChangeStyle("Satellite", BuiltInStyles.SatelliteStreets)));
 
     private UIView CreateZoomControls() =>
@@ -255,6 +267,331 @@ public sealed class MapboxViewController : UIViewController
             {
                 ShowMessage(error is null ? label : error.LocalizedDescription);
             });
+        });
+    }
+
+    private void Run3DSmokeChecks()
+    {
+        Run3DLayerSmokeCheck(() => EnableTerrain(true));
+    }
+
+    private void Run3DLayerSmokeCheck(Action complete)
+    {
+        var completed = false;
+        void CompleteOnce()
+        {
+            if (completed)
+            {
+                return;
+            }
+
+            completed = true;
+            InvokeOnMainThread(complete);
+        }
+
+        if (mapboxMap is null)
+        {
+            AddSmokeResult(SmokeTestRunner.Fail("3D layer access", "Map is not ready."));
+            CompleteOnce();
+            return;
+        }
+
+        mapboxMap.LoadStyleWithUri(BuiltInStyles.Streets, null, error =>
+        {
+            if (completed)
+            {
+                return;
+            }
+
+            if (error is not null)
+            {
+                AddSmokeResult(SmokeTestRunner.Fail("3D layer access", error.LocalizedDescription));
+                CompleteOnce();
+                return;
+            }
+
+            try
+            {
+                AddSmoke3DLayer(CompleteOnce);
+            }
+            catch (Exception exception)
+            {
+                AddSmokeResult(SmokeTestRunner.Fail("3D layer access", $"{exception.GetType().Name}: {exception.Message}"));
+                CompleteOnce();
+            }
+        });
+    }
+
+    private void AddSmoke3DLayer(Action complete)
+    {
+        if (mapboxMap is null)
+        {
+            AddSmokeResult(SmokeTestRunner.Fail("3D layer access", "Map is not ready."));
+            InvokeOnMainThread(complete);
+            return;
+        }
+
+        var layerProperties = CreateSmoke3DLayerProperties();
+        mapboxMap.AddLayerWith(layerProperties, null, error =>
+        {
+            if (error is not null)
+            {
+                AddSmokeResult(SmokeTestRunner.Fail("3D layer access", error.LocalizedDescription));
+                InvokeOnMainThread(complete);
+                return;
+            }
+
+            var exists = mapboxMap.LayerExistsWithId(Smoke3DLayerId);
+            var layerInfo = mapboxMap.AllLayerIdentifiers.FirstOrDefault(layer => layer.Id == Smoke3DLayerId);
+            var isFillExtrusion = string.Equals(
+                layerInfo?.Type.RawValue,
+                TMBLayerType.FillExtrusion.RawValue,
+                StringComparison.OrdinalIgnoreCase);
+
+            if (!exists || !isFillExtrusion)
+            {
+                AddSmokeResult(SmokeTestRunner.Fail(
+                    "3D layer access",
+                    $"Layer exists={exists}, type={layerInfo?.Type.RawValue ?? "missing"}."));
+                InvokeOnMainThread(complete);
+                return;
+            }
+
+            SetCameraFor3DLayer();
+            AddSmokeResult(SmokeTestRunner.Pass(
+                "3D layer access",
+                $"Added {Smoke3DLayerId} as {layerInfo!.Type.RawValue} from {Smoke3DLayerSourceId}/{Smoke3DLayerSourceLayer}."));
+            InvokeOnMainThread(complete);
+        });
+    }
+
+    private static NSDictionary<NSString, NSObject> CreateSmoke3DLayerProperties()
+    {
+        var paintProperties = NSDictionary<NSString, NSObject>.FromObjectsAndKeys(
+            new NSObject[]
+            {
+                NSNumber.FromDouble(0),
+                new NSString("#d2693c"),
+                NSNumber.FromDouble(90),
+                NSNumber.FromDouble(0.78),
+                NSNumber.FromBoolean(true)
+            },
+            new NSString[]
+            {
+                new("fill-extrusion-base"),
+                new("fill-extrusion-color"),
+                new("fill-extrusion-height"),
+                new("fill-extrusion-opacity"),
+                new("fill-extrusion-vertical-gradient")
+            });
+
+        return NSDictionary<NSString, NSObject>.FromObjectsAndKeys(
+            new NSObject[]
+            {
+                new NSString(Smoke3DLayerId),
+                new NSString(TMBLayerType.FillExtrusion.RawValue),
+                new NSString(Smoke3DLayerSourceId),
+                new NSString(Smoke3DLayerSourceLayer),
+                NSNumber.FromDouble(13),
+                paintProperties
+            },
+            new NSString[]
+            {
+                new("id"),
+                new("type"),
+                new("source"),
+                new("source-layer"),
+                new("minzoom"),
+                new("paint")
+            });
+    }
+
+    private void SetCameraFor3DLayer()
+    {
+        if (mapboxMap is null)
+        {
+            return;
+        }
+
+        currentCenter = new CLLocationCoordinate2D(40.7484, -73.9857);
+        currentZoom = 15.5;
+
+        using var cameraOptions = new TMBCameraOptions(
+            currentCenter,
+            UIEdgeInsets.Zero,
+            CGPoint.Empty,
+            (nfloat)currentZoom,
+            0,
+            60);
+        mapboxMap.SetCameraTo(cameraOptions);
+    }
+
+    private void EnableTerrain(bool recordSmokeResult)
+    {
+        if (mapboxMap is null)
+        {
+            ReportTerrainResult(SmokeTestRunner.Fail("3D terrain access", "Map is not ready."), recordSmokeResult);
+            return;
+        }
+
+        mapboxMap.LoadStyleWithUri(BuiltInStyles.Outdoors, null, error =>
+        {
+            if (error is not null)
+            {
+                ReportTerrainResult(SmokeTestRunner.Fail("3D terrain access", error.LocalizedDescription), recordSmokeResult);
+                return;
+            }
+
+            try
+            {
+                AddTerrainSource(recordSmokeResult);
+            }
+            catch (Exception exception)
+            {
+                ReportTerrainResult(SmokeTestRunner.Fail("3D terrain access", $"{exception.GetType().Name}: {exception.Message}"), recordSmokeResult);
+            }
+        });
+    }
+
+    private void AddTerrainSource(bool recordSmokeResult)
+    {
+        if (mapboxMap is null)
+        {
+            ReportTerrainResult(SmokeTestRunner.Fail("3D terrain access", "Map is not ready."), recordSmokeResult);
+            return;
+        }
+
+        if (mapboxMap.SourceExistsWithId(SmokeTerrainSourceId))
+        {
+            SetTerrain(recordSmokeResult);
+            return;
+        }
+
+        var sourceProperties = CreateSmokeTerrainSourceProperties();
+        mapboxMap.AddSourceWithId(SmokeTerrainSourceId, sourceProperties, error =>
+        {
+            if (error is not null)
+            {
+                ReportTerrainResult(SmokeTestRunner.Fail("3D terrain access", error.LocalizedDescription), recordSmokeResult);
+                return;
+            }
+
+            SetTerrain(recordSmokeResult);
+        });
+    }
+
+    private void SetTerrain(bool recordSmokeResult)
+    {
+        if (mapboxMap is null)
+        {
+            ReportTerrainResult(SmokeTestRunner.Fail("3D terrain access", "Map is not ready."), recordSmokeResult);
+            return;
+        }
+
+        var terrainProperties = CreateSmokeTerrainProperties();
+        mapboxMap.SetTerrainWithProperties(terrainProperties, error =>
+        {
+            if (error is not null)
+            {
+                ReportTerrainResult(SmokeTestRunner.Fail("3D terrain access", error.LocalizedDescription), recordSmokeResult);
+                return;
+            }
+
+            var sourceExists = mapboxMap.SourceExistsWithId(SmokeTerrainSourceId);
+            var terrainSource = mapboxMap.TerrainPropertyValue("source")?.ToString();
+            if (!sourceExists || !string.Equals(terrainSource, SmokeTerrainSourceId, StringComparison.Ordinal))
+            {
+                ReportTerrainResult(
+                    SmokeTestRunner.Fail("3D terrain access", $"Source exists={sourceExists}, terrain source={terrainSource ?? "missing"}."),
+                    recordSmokeResult);
+                return;
+            }
+
+            SetCameraForTerrain();
+            var elevation = mapboxMap.ElevationAt(currentCenter);
+            var elevationDetails = elevation is null ? "elevation pending" : $"elevation {elevation.DoubleValue:0}m";
+            ReportTerrainResult(
+                SmokeTestRunner.Pass("3D terrain access", $"Set terrain from {SmokeTerrainSourceId}; {elevationDetails}."),
+                recordSmokeResult);
+        });
+    }
+
+    private static NSDictionary<NSString, NSObject> CreateSmokeTerrainSourceProperties() =>
+        NSDictionary<NSString, NSObject>.FromObjectsAndKeys(
+            new NSObject[]
+            {
+                new NSString(TMBSourceType.RasterDem.RawValue),
+                new NSString(SmokeTerrainSourceUrl),
+                NSNumber.FromInt32(512),
+                NSNumber.FromDouble(14)
+            },
+            new NSString[]
+            {
+                new("type"),
+                new("url"),
+                new("tileSize"),
+                new("maxzoom")
+            });
+
+    private static NSDictionary<NSString, NSObject> CreateSmokeTerrainProperties() =>
+        NSDictionary<NSString, NSObject>.FromObjectsAndKeys(
+            new NSObject[]
+            {
+                new NSString(SmokeTerrainSourceId),
+                NSNumber.FromDouble(1.5)
+            },
+            new NSString[]
+            {
+                new("source"),
+                new("exaggeration")
+            });
+
+    private void SetCameraForTerrain()
+    {
+        if (mapboxMap is null)
+        {
+            return;
+        }
+
+        currentCenter = new CLLocationCoordinate2D(37.7459, -119.5936);
+        currentZoom = 12.4;
+
+        using var cameraOptions = new TMBCameraOptions(
+            currentCenter,
+            UIEdgeInsets.Zero,
+            CGPoint.Empty,
+            (nfloat)currentZoom,
+            35,
+            70);
+        mapboxMap.SetCameraTo(cameraOptions);
+    }
+
+    private void ReportTerrainResult(SmokeTestResult result, bool recordSmokeResult)
+    {
+        if (recordSmokeResult)
+        {
+            AddSmokeResult(result);
+            return;
+        }
+
+        InvokeOnMainThread(() =>
+        {
+            ShowMessage(result.Status == SmokeTestStatus.Passed ? "3D terrain" : result.Details);
+        });
+    }
+
+    private void AddSmokeResult(SmokeTestResult result)
+    {
+        InvokeOnMainThread(() =>
+        {
+            smokeResults.Add(result);
+            if (statusOverlay is not null)
+            {
+                statusOverlay.Text = BuildStatusText(smokeResults);
+            }
+
+            LogResults(new[] { result });
+            ShowMessage(result.Status == SmokeTestStatus.Passed ? result.Name : result.Details);
         });
     }
 

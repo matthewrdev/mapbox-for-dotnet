@@ -79,6 +79,39 @@ internal static class SmokeTestRunner
                 : Pass("MapboxMapsObjC bridge", $"BuiltInStyles.Streets resolved to {streetsStyle}.");
         });
 
+        AddCheck(results, "3D layer binding surface", () =>
+        {
+            using var layer = new TMBFillExtrusionLayer("dotnet-3d-binding-check", "composite")
+            {
+                SourceLayer = "building",
+                MinZoom = NSNumber.FromDouble(13),
+                FillExtrusionHeight = TMBValue.DoubleValue(42)
+            };
+
+            return string.Equals(layer.Type.RawValue, TMBLayerType.FillExtrusion.RawValue, StringComparison.OrdinalIgnoreCase)
+                ? Pass("3D layer binding surface", $"TMBFillExtrusionLayer resolved as {layer.Type.RawValue}.")
+                : Fail("3D layer binding surface", $"Expected {TMBLayerType.FillExtrusion.RawValue}, got {layer.Type.RawValue}.");
+        });
+
+        AddCheck(results, "3D terrain binding surface", () =>
+        {
+            using var source = new TMBRasterDemSource("dotnet-terrain-binding-check")
+            {
+                Url = "mapbox://mapbox.mapbox-terrain-dem-v1",
+                TileSize = NSNumber.FromInt32(512),
+                Maxzoom = NSNumber.FromDouble(14)
+            };
+            using var terrain = new TMBTerrain(source.Id)
+            {
+                Exaggeration = TMBValue.DoubleValue(1.5)
+            };
+
+            return string.Equals(source.Type.RawValue, TMBSourceType.RasterDem.RawValue, StringComparison.OrdinalIgnoreCase)
+                && string.Equals(terrain.Source, source.Id, StringComparison.Ordinal)
+                ? Pass("3D terrain binding surface", $"TMBRasterDemSource resolved as {source.Type.RawValue}; TMBTerrain targets {terrain.Source}.")
+                : Fail("3D terrain binding surface", $"Source type={source.Type.RawValue}, terrain source={terrain.Source}.");
+        });
+
         AddCheck(results, "Camera options", () =>
         {
             using var cameraOptions = CreateDefaultCameraOptions();

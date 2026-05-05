@@ -41,4 +41,10 @@
     <PackageReference Include="MapboxMaps.iOS" Version="11.8.0" />
     <PackageReference Include="MapboxMapsObjC.iOS" Version="11.8.0" />
   </ItemGroup>
+
+  <ItemGroup>
+    <BundleResource Include="..\MapboxBindings.TestAssets\monte-sordo-mapbox-smoke.glb">
+      <Link>monte-sordo-mapbox-smoke.glb</Link>
+    </BundleResource>
+  </ItemGroup>
 </Project>

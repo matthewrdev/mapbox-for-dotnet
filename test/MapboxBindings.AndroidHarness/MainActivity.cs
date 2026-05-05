@@ -19,6 +19,12 @@ public class MainActivity : AppCompatActivity
     private const double DefaultJumpZoom = 14.0;
     private const double MaximumZoom = 24.0;
     private const double MinimumZoom = 0.0;
+    private const double SmokeModelLatitude = 60.171957;
+    private const double SmokeModelLongitude = 24.945389;
+    private const string SmokeModelGlbAssetUri = "asset://monte-sordo-mapbox-smoke.glb";
+    private const string SmokeModelId = "monte-sordo-uld";
+    private const string SmokeModelLayerId = "dotnet-smoke-glb-model-layer";
+    private const string SmokeModelSourceId = "dotnet-smoke-glb-model-source";
 
     private EditText? coordinateEntry;
     private readonly Dictionary<string, bool> layerGroupVisibility = new(StringComparer.Ordinal);
@@ -140,7 +146,8 @@ public class MainActivity : AppCompatActivity
         CreateIconStack(
             new IconAction(Resource.Drawable.ic_material_map, "Street style", () => ChangeStyle("Street", Style.MapboxStreets)),
             new IconAction(Resource.Drawable.ic_material_terrain, "Terrain style", () => ChangeStyle("Terrain", Style.Outdoors)),
-            new IconAction(Resource.Drawable.ic_material_satellite, "Satellite style", () => ChangeStyle("Satellite", Style.SatelliteStreets)));
+            new IconAction(Resource.Drawable.ic_material_satellite, "Satellite style", () => ChangeStyle("Satellite", Style.SatelliteStreets)),
+            new IconAction(Resource.Drawable.ic_material_view_in_ar, "GLB model", EnableModel));
 
     private LinearLayout CreateLayerControls() =>
         CreateIconStack(
@@ -254,6 +261,39 @@ public class MainActivity : AppCompatActivity
         });
     }
 
+    private void EnableModel()
+    {
+        if (mapView?.MapboxMap is not { } mapboxMap)
+        {
+            return;
+        }
+
+        layerGroupVisibility.Clear();
+        mapboxMap.LoadStyleUri(Style.Standard, style =>
+        {
+            var sourceResult = style.StyleSourceExists(SmokeModelSourceId)
+                ? null
+                : style.AddStyleSource(SmokeModelSourceId, CreateSmokeModelSourceProperties());
+            if (sourceResult?.IsError == true)
+            {
+                Toast.MakeText(this, "Unable to add GLB source", ToastLength.Long)?.Show();
+                return;
+            }
+
+            var layerResult = style.StyleLayerExists(SmokeModelLayerId)
+                ? null
+                : style.AddStyleLayer(CreateSmokeModelLayerProperties(), null);
+            if (layerResult?.IsError == true)
+            {
+                Toast.MakeText(this, "Unable to add GLB layer", ToastLength.Long)?.Show();
+                return;
+            }
+
+            SetCameraForModel();
+            Toast.MakeText(this, "GLB model", ToastLength.Short)?.Show();
+        });
+    }
+
     private void ToggleLayerGroup(string groupKey, Func<StyleObjectInfo, bool> layerMatcher)
     {
         if (mapView?.MapboxMap is not { } mapboxMap)
@@ -308,6 +348,42 @@ public class MainActivity : AppCompatActivity
     private static bool IsExtrusionLayer(StyleObjectInfo layer) =>
         string.Equals(layer.Type, "fill-extrusion", StringComparison.OrdinalIgnoreCase);
 
+    private static Value CreateSmokeModelSourceProperties()
+    {
+        var model = CreateValueObject(
+            ("uri", new Value(SmokeModelGlbAssetUri)),
+            ("position", CreateValueArray(SmokeModelLongitude, SmokeModelLatitude)),
+            ("orientation", CreateValueArray(0, 0, 0)));
+        var models = CreateValueObject(
+            (SmokeModelId, model));
+
+        return CreateValueObject(
+            ("type", new Value("model")),
+            ("models", models));
+    }
+
+    private static Value CreateSmokeModelLayerProperties()
+    {
+        var paintProperties = CreateValueObject(
+            ("model-scale", CreateValueArray(180, 180, 180)),
+            ("model-translation", CreateValueArray(0, 0, 0)),
+            ("model-rotation", CreateValueArray(0, 0, 0)),
+            ("model-opacity", new Value(1.0)),
+            ("model-type", new Value("common-3d")));
+
+        return CreateValueObject(
+            ("id", new Value(SmokeModelLayerId)),
+            ("type", new Value("model")),
+            ("source", new Value(SmokeModelSourceId)),
+            ("paint", paintProperties));
+    }
+
+    private static Value CreateValueArray(params double[] values) =>
+        Value.ValueOf(values.Select(value => new Value(value)).ToList());
+
+    private static Value CreateValueObject(params (string Key, Value Value)[] properties) =>
+        Value.ValueOf(properties.ToDictionary(property => property.Key, property => property.Value));
+
     private static bool TryParseCoordinate(
         string coordinateText,
         out double latitude,
@@ -349,6 +425,24 @@ public class MainActivity : AppCompatActivity
             inputMethodManager?.HideSoftInputFromWindow(windowToken, HideSoftInputFlags.None);
         }
         coordinateEntry?.ClearFocus();
+    }
+
+    private void SetCameraForModel()
+    {
+        var cameraOptions = new CameraOptions.Builder()
+            .Center(GeoPoint.FromLngLat(SmokeModelLongitude, SmokeModelLatitude))
+            ?.Zoom(Java.Lang.Double.ValueOf(16.2))
+            ?.Bearing(Java.Lang.Double.ValueOf(25))
+            ?.Pitch(Java.Lang.Double.ValueOf(62))
+            ?.Build();
+
+        if (cameraOptions is null)
+        {
+            Toast.MakeText(this, "Unable to build GLB camera", ToastLength.Short)?.Show();
+            return;
+        }
+
+        mapView?.MapboxMap.SetCamera(cameraOptions);
     }
 
     private int Dp(int value) =>

@@ -1,9 +1,11 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Threading.Tasks;
 using CoreGraphics;
 using CoreLocation;
 using Foundation;
+using MapboxCoreMaps;
 using MapboxMaps;
 using MapboxMapsObjC;
 using UIKit;
@@ -20,6 +22,11 @@ public sealed class MapboxViewController : UIViewController
     private const string Smoke3DLayerSourceLayer = "building";
     private const string SmokeTerrainSourceId = "dotnet-smoke-terrain-dem";
     private const string SmokeTerrainSourceUrl = "mapbox://mapbox.mapbox-terrain-dem-v1";
+    private const double SmokeModelLatitude = 60.171957;
+    private const double SmokeModelLongitude = 24.945389;
+    private const string SmokeModelId = "monte-sordo-uld";
+    private const string SmokeModelLayerId = "dotnet-smoke-glb-model-layer";
+    private const string SmokeModelSourceId = "dotnet-smoke-glb-model-source";
 
     private readonly List<SmokeTestResult> smokeResults = new();
     private UITextField? coordinateEntry;
@@ -29,6 +36,8 @@ public sealed class MapboxViewController : UIViewController
     private MapView? mapView;
     private TMBMapboxMap? mapboxMap;
     private UITextView? statusOverlay;
+    private bool modelRenderResultReported;
+    private TMBCancelable? modelLoadingErrorSubscription;
 
     public override void ViewDidLoad()
     {
@@ -138,6 +147,7 @@ public sealed class MapboxViewController : UIViewController
         CreateButtonStack(
             new ControlAction("Map", "Street style", () => ChangeStyle("Street", BuiltInStyles.Streets)),
             new ControlAction("Ter", "3D terrain", () => EnableTerrain(false)),
+            new ControlAction("GLB", "GLB model", () => EnableModel(false)),
             new ControlAction("Sat", "Satellite style", () => ChangeStyle("Satellite", BuiltInStyles.SatelliteStreets)));
 
     private UIView CreateZoomControls() =>
@@ -272,7 +282,7 @@ public sealed class MapboxViewController : UIViewController
 
     private void Run3DSmokeChecks()
     {
-        Run3DLayerSmokeCheck(() => EnableTerrain(true));
+        Run3DLayerSmokeCheck(() => EnableTerrain(true, () => EnableModel(true)));
     }
 
     private void Run3DLayerSmokeCheck(Action complete)
@@ -426,44 +436,65 @@ public sealed class MapboxViewController : UIViewController
         mapboxMap.SetCameraTo(cameraOptions);
     }
 
-    private void EnableTerrain(bool recordSmokeResult)
+    private void EnableTerrain(bool recordSmokeResult, Action? complete = null)
     {
+        var completed = false;
+        void Finish(SmokeTestResult result)
+        {
+            if (completed)
+            {
+                return;
+            }
+
+            completed = true;
+            ReportTerrainResult(result, recordSmokeResult);
+            if (complete is not null)
+            {
+                InvokeOnMainThread(complete);
+            }
+        }
+
         if (mapboxMap is null)
         {
-            ReportTerrainResult(SmokeTestRunner.Fail("3D terrain access", "Map is not ready."), recordSmokeResult);
+            Finish(SmokeTestRunner.Fail("3D terrain access", "Map is not ready."));
             return;
         }
 
         mapboxMap.LoadStyleWithUri(BuiltInStyles.Outdoors, null, error =>
         {
+            if (completed)
+            {
+                return;
+            }
+
             if (error is not null)
             {
-                ReportTerrainResult(SmokeTestRunner.Fail("3D terrain access", error.LocalizedDescription), recordSmokeResult);
+                Finish(SmokeTestRunner.Fail("3D terrain access", error.LocalizedDescription));
                 return;
             }
 
             try
             {
-                AddTerrainSource(recordSmokeResult);
+                AddTerrainSource(Finish);
             }
             catch (Exception exception)
             {
-                ReportTerrainResult(SmokeTestRunner.Fail("3D terrain access", $"{exception.GetType().Name}: {exception.Message}"), recordSmokeResult);
+                Finish(SmokeTestRunner.Fail("3D terrain access", $"{exception.GetType().Name}: {exception.Message}"));
             }
         });
     }
 
-    private void AddTerrainSource(bool recordSmokeResult)
+    private void AddTerrainSource(Action<SmokeTestResult> complete)
     {
         if (mapboxMap is null)
         {
-            ReportTerrainResult(SmokeTestRunner.Fail("3D terrain access", "Map is not ready."), recordSmokeResult);
+            complete(SmokeTestRunner.Fail("3D terrain access", "Map is not ready."));
             return;
         }
 
         if (mapboxMap.SourceExistsWithId(SmokeTerrainSourceId))
         {
-            SetTerrain(recordSmokeResult);
+            SetTerrain(complete);
             return;
         }
 
@@ -472,19 +503,19 @@ public sealed class MapboxViewController : UIViewController
         {
             if (error is not null)
             {
-                ReportTerrainResult(SmokeTestRunner.Fail("3D terrain access", error.LocalizedDescription), recordSmokeResult);
+                complete(SmokeTestRunner.Fail("3D terrain access", error.LocalizedDescription));
                 return;
             }
 
-            SetTerrain(recordSmokeResult);
+            SetTerrain(complete);
         });
     }
 
-    private void SetTerrain(bool recordSmokeResult)
+    private void SetTerrain(Action<SmokeTestResult> complete)
     {
         if (mapboxMap is null)
         {
-            ReportTerrainResult(SmokeTestRunner.Fail("3D terrain access", "Map is not ready."), recordSmokeResult);
+            complete(SmokeTestRunner.Fail("3D terrain access", "Map is not ready."));
             return;
         }
 
@@ -493,7 +524,7 @@ public sealed class MapboxViewController : UIViewController
         {
             if (error is not null)
             {
-                ReportTerrainResult(SmokeTestRunner.Fail("3D terrain access", error.LocalizedDescription), recordSmokeResult);
+                complete(SmokeTestRunner.Fail("3D terrain access", error.LocalizedDescription));
                 return;
             }
 
@@ -501,18 +532,14 @@ public sealed class MapboxViewController : UIViewController
             var terrainSource = mapboxMap.TerrainPropertyValue("source")?.ToString();
             if (!sourceExists || !string.Equals(terrainSource, SmokeTerrainSourceId, StringComparison.Ordinal))
             {
-                ReportTerrainResult(
-                    SmokeTestRunner.Fail("3D terrain access", $"Source exists={sourceExists}, terrain source={terrainSource ?? "missing"}."),
-                    recordSmokeResult);
+                complete(SmokeTestRunner.Fail("3D terrain access", $"Source exists={sourceExists}, terrain source={terrainSource ?? "missing"}."));
                 return;
             }
 
             SetCameraForTerrain();
             var elevation = mapboxMap.ElevationAt(currentCenter);
             var elevationDetails = elevation is null ? "elevation pending" : $"elevation {elevation.DoubleValue:0}m";
-            ReportTerrainResult(
-                SmokeTestRunner.Pass("3D terrain access", $"Set terrain from {SmokeTerrainSourceId}; {elevationDetails}."),
-                recordSmokeResult);
+            complete(SmokeTestRunner.Pass("3D terrain access", $"Set terrain from {SmokeTerrainSourceId}; {elevationDetails}."));
         });
     }
 
@@ -577,6 +604,310 @@ public sealed class MapboxViewController : UIViewController
         InvokeOnMainThread(() =>
         {
             ShowMessage(result.Status == SmokeTestStatus.Passed ? "3D terrain" : result.Details);
+        });
+    }
+
+    private void EnableModel(bool recordSmokeResult)
+    {
+        if (mapboxMap is null)
+        {
+            ReportModelResult(SmokeTestRunner.Fail("3D model access", "Map is not ready."), recordSmokeResult);
+            return;
+        }
+
+        var modelGlbUrl = SmokeTestRunner.ResolveModelGlbUrl();
+        if (string.IsNullOrWhiteSpace(modelGlbUrl))
+        {
+            ReportModelResult(
+                SmokeTestRunner.Fail("3D model access", $"Bundled GLB asset {SmokeTestRunner.ModelGlbFileName} is missing."),
+                recordSmokeResult);
+            return;
+        }
+
+        StartModelRenderWatch(modelGlbUrl, recordSmokeResult);
+        mapboxMap.LoadStyleWithUri(BuiltInStyles.Standard, null, error =>
+        {
+            if (error is not null)
+            {
+                CompleteModelRenderResult(SmokeTestRunner.Fail("3D model access", error.LocalizedDescription), recordSmokeResult);
+                return;
+            }
+
+            try
+            {
+                AddModelSource(modelGlbUrl, recordSmokeResult);
+            }
+            catch (Exception exception)
+            {
+                CompleteModelRenderResult(
+                    SmokeTestRunner.Fail("3D model access", $"{exception.GetType().Name}: {exception.Message}"),
+                    recordSmokeResult);
+            }
+        });
+    }
+
+    private void StartModelRenderWatch(string modelGlbUrl, bool recordSmokeResult)
+    {
+        modelRenderResultReported = false;
+        modelLoadingErrorSubscription?.Cancel();
+        modelLoadingErrorSubscription = mapboxMap?.OnMapLoadingError(error =>
+        {
+            if (!IsSmokeModelLoadingError(error, modelGlbUrl))
+            {
+                return;
+            }
+
+            CompleteModelRenderResult(
+                SmokeTestRunner.Fail("3D model render", $"Renderer rejected the GLB: {error.Message}"),
+                recordSmokeResult);
+        });
+    }
+
+    private void AddModelSource(string modelGlbUrl, bool recordSmokeResult)
+    {
+        if (mapboxMap is null)
+        {
+            CompleteModelRenderResult(SmokeTestRunner.Fail("3D model access", "Map is not ready."), recordSmokeResult);
+            return;
+        }
+
+        if (mapboxMap.SourceExistsWithId(SmokeModelSourceId))
+        {
+            AddModelLayer(modelGlbUrl, recordSmokeResult);
+            return;
+        }
+
+        var sourceProperties = CreateSmokeModelSourceProperties(modelGlbUrl);
+        mapboxMap.AddSourceWithId(SmokeModelSourceId, sourceProperties, error =>
+        {
+            if (error is not null)
+            {
+                CompleteModelRenderResult(SmokeTestRunner.Fail("3D model access", error.LocalizedDescription), recordSmokeResult);
+                return;
+            }
+
+            AddModelLayer(modelGlbUrl, recordSmokeResult);
+        });
+    }
+
+    private void AddModelLayer(string modelGlbUrl, bool recordSmokeResult)
+    {
+        if (mapboxMap is null)
+        {
+            CompleteModelRenderResult(SmokeTestRunner.Fail("3D model access", "Map is not ready."), recordSmokeResult);
+            return;
+        }
+
+        if (mapboxMap.LayerExistsWithId(SmokeModelLayerId))
+        {
+            VerifyModelLayer(modelGlbUrl, recordSmokeResult);
+            return;
+        }
+
+        var layerProperties = CreateSmokeModelLayerProperties();
+        mapboxMap.AddLayerWith(layerProperties, null, error =>
+        {
+            if (error is not null)
+            {
+                CompleteModelRenderResult(SmokeTestRunner.Fail("3D model access", error.LocalizedDescription), recordSmokeResult);
+                return;
+            }
+
+            VerifyModelLayer(modelGlbUrl, recordSmokeResult);
+        });
+    }
+
+    private void VerifyModelLayer(string modelGlbUrl, bool recordSmokeResult)
+    {
+        if (mapboxMap is null)
+        {
+            CompleteModelRenderResult(SmokeTestRunner.Fail("3D model access", "Map is not ready."), recordSmokeResult);
+            return;
+        }
+
+        var sourceExists = mapboxMap.SourceExistsWithId(SmokeModelSourceId);
+        var layerExists = mapboxMap.LayerExistsWithId(SmokeModelLayerId);
+        var layerInfo = mapboxMap.AllLayerIdentifiers.FirstOrDefault(layer => layer.Id == SmokeModelLayerId);
+        var isModelLayer = string.Equals(layerInfo?.Type.RawValue, "model", StringComparison.OrdinalIgnoreCase);
+
+        if (!sourceExists || !layerExists || !isModelLayer)
+        {
+            CompleteModelRenderResult(
+                SmokeTestRunner.Fail("3D model access", $"Source exists={sourceExists}, layer exists={layerExists}, type={layerInfo?.Type.RawValue ?? "missing"}."),
+                recordSmokeResult);
+            return;
+        }
+
+        SetCameraForModel();
+        ShowMessage("Loading GLB model");
+        ScheduleModelRenderPass(modelGlbUrl, recordSmokeResult);
+    }
+
+    private void ScheduleModelRenderPass(string modelGlbUrl, bool recordSmokeResult)
+    {
+        _ = Task.Run(async () =>
+        {
+            await Task.Delay(TimeSpan.FromSeconds(5));
+            CompleteModelRenderResult(
+                SmokeTestRunner.Pass("3D model render", $"Loaded {SmokeModelLayerId} from {modelGlbUrl} without a renderer error."),
+                recordSmokeResult);
+        });
+    }
+
+    private void CompleteModelRenderResult(SmokeTestResult result, bool recordSmokeResult)
+    {
+        InvokeOnMainThread(() =>
+        {
+            if (modelRenderResultReported)
+            {
+                return;
+            }
+
+            modelRenderResultReported = true;
+            modelLoadingErrorSubscription?.Cancel();
+            modelLoadingErrorSubscription = null;
+            ReportModelResult(result, recordSmokeResult);
+        });
+    }
+
+    private static bool IsSmokeModelLoadingError(MBMMapLoadingError error, string modelGlbUrl)
+    {
+        var message = error.Message ?? string.Empty;
+        var sourceId = error.SourceId ?? string.Empty;
+        return string.Equals(sourceId, SmokeModelSourceId, StringComparison.Ordinal) ||
+            message.Contains(modelGlbUrl, StringComparison.OrdinalIgnoreCase) ||
+            message.Contains(SmokeTestRunner.ModelGlbFileName, StringComparison.OrdinalIgnoreCase) ||
+            message.Contains(SmokeModelSourceId, StringComparison.OrdinalIgnoreCase) ||
+            message.Contains(SmokeModelLayerId, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static NSDictionary<NSString, NSObject> CreateSmokeModelSourceProperties(string modelGlbUrl)
+    {
+        var model = NSDictionary<NSString, NSObject>.FromObjectsAndKeys(
+            new NSObject[]
+            {
+                new NSString(modelGlbUrl),
+                CreateNumberArray(SmokeModelLongitude, SmokeModelLatitude),
+                CreateNumberArray(0, 0, 0)
+            },
+            new NSString[]
+            {
+                new("uri"),
+                new("position"),
+                new("orientation")
+            });
+        var models = NSDictionary<NSString, NSObject>.FromObjectsAndKeys(
+            new NSObject[]
+            {
+                model
+            },
+            new NSString[]
+            {
+                new(SmokeModelId)
+            });
+
+        return NSDictionary<NSString, NSObject>.FromObjectsAndKeys(
+            new NSObject[]
+            {
+                new NSString("model"),
+                models
+            },
+            new NSString[]
+            {
+                new("type"),
+                new("models")
+            });
+    }
+
+    private static NSDictionary<NSString, NSObject> CreateSmokeModelLayerProperties()
+    {
+        var paintProperties = NSDictionary<NSString, NSObject>.FromObjectsAndKeys(
+            new NSObject[]
+            {
+                CreateNumberArray(180, 180, 180),
+                CreateNumberArray(0, 0, 0),
+                CreateNumberArray(0, 0, 0),
+                NSNumber.FromDouble(1),
+                new NSString(TMBModelType.Common3d.RawValue)
+            },
+            new NSString[]
+            {
+                new("model-scale"),
+                new("model-translation"),
+                new("model-rotation"),
+                new("model-opacity"),
+                new("model-type")
+            });
+
+        return NSDictionary<NSString, NSObject>.FromObjectsAndKeys(
+            new NSObject[]
+            {
+                new NSString(SmokeModelLayerId),
+                new NSString("model"),
+                new NSString(SmokeModelSourceId),
+                paintProperties
+            },
+            new NSString[]
+            {
+                new("id"),
+                new("type"),
+                new("source"),
+                new("paint")
+            });
+    }
+
+    private static NSArray CreateNumberArray(params double[] values) =>
+        NSArray.FromNSObjects(values.Select(NSNumber.FromDouble).ToArray());
+
+    private void SetCameraForModel()
+    {
+        if (mapboxMap is null)
+        {
+            return;
+        }
+
+        currentCenter = new CLLocationCoordinate2D(SmokeModelLatitude, SmokeModelLongitude);
+        currentZoom = 16.2;
+
+        using var cameraOptions = new TMBCameraOptions(
+            currentCenter,
+            UIEdgeInsets.Zero,
+            CGPoint.Empty,
+            (nfloat)currentZoom,
+            25,
+            62);
+        mapboxMap.SetCameraTo(cameraOptions);
+    }
+
+    private void HideStatusOverlayForModel()
+    {
+        if (statusOverlay is null)
+        {
+            return;
+        }
+
+        InvokeOnMainThread(() =>
+        {
+            statusOverlay.Hidden = true;
+        });
+    }
+
+    private void ReportModelResult(SmokeTestResult result, bool recordSmokeResult)
+    {
+        if (result.Status == SmokeTestStatus.Passed)
+        {
+            HideStatusOverlayForModel();
+        }
+
+        if (recordSmokeResult)
+        {
+            AddSmokeResult(result);
+            return;
+        }
+
+        InvokeOnMainThread(() =>
+        {
+            ShowMessage(result.Status == SmokeTestStatus.Passed ? "GLB model" : result.Details);
         });
     }
 

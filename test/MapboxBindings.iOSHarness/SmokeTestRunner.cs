@@ -15,10 +15,13 @@ internal static class SmokeTestRunner
     public const double DefaultLatitude = 40.7128;
     public const double DefaultLongitude = -74.0060;
     public const double DefaultZoom = 10;
+    public const string ModelGlbFileName = "monte-sordo-mapbox-smoke.glb";
 
     private const string TokenMetadataKey = "MapboxAccessToken";
     private const string TokenEnvironmentVariable = "MAPBOX_TESTHARNESS_TOKEN";
     private const string PlaceholderToken = "YOUR_MAPBOX_ACCESS_TOKEN";
+    private const string ModelGlbResourceName = "monte-sordo-mapbox-smoke";
+    private const string ModelGlbResourceExtension = "glb";
 
     public static IReadOnlyList<SmokeTestResult> RunStartupChecks()
     {
@@ -112,6 +115,26 @@ internal static class SmokeTestRunner
                 : Fail("3D terrain binding surface", $"Source type={source.Type.RawValue}, terrain source={terrain.Source}.");
         });
 
+        AddCheck(results, "3D model binding surface", () =>
+        {
+            using var modelUri = CreateModelGlbUrl();
+            if (modelUri is null)
+            {
+                return Fail("3D model binding surface", $"Bundled GLB asset {ModelGlbFileName} could not be resolved.");
+            }
+
+            using var model = new TMBModel(
+                modelUri,
+                new[] { NSNumber.FromDouble(24.945389), NSNumber.FromDouble(60.171957), NSNumber.FromDouble(0) },
+                new[] { NSNumber.FromDouble(0), NSNumber.FromDouble(0), NSNumber.FromDouble(0) });
+
+            return string.Equals(model.Uri?.AbsoluteString, modelUri.AbsoluteString, StringComparison.Ordinal)
+                && string.Equals(TMBModelType.Common3d.RawValue, "common-3d", StringComparison.Ordinal)
+                && string.Equals(TMBSourceType.Model.RawValue, "model", StringComparison.Ordinal)
+                ? Pass("3D model binding surface", $"TMBModel, TMBModelType, and model source type are exposed for {ModelGlbFileName}.")
+                : Fail("3D model binding surface", $"Model URI={model.Uri?.AbsoluteString ?? "missing"}, model type={TMBModelType.Common3d.RawValue}, source type={TMBSourceType.Model.RawValue}.");
+        });
+
         AddCheck(results, "Camera options", () =>
         {
             using var cameraOptions = CreateDefaultCameraOptions();
@@ -145,6 +168,9 @@ internal static class SmokeTestRunner
         return MapViewFactory.CreateWithFrame(frame, mapInitOptions);
     }
 
+    public static string? ResolveModelGlbUrl() =>
+        CreateModelGlbUrl()?.AbsoluteString;
+
     public static TMBCameraOptions CreateCameraOptions(CLLocationCoordinate2D centerLocation, double zoom) =>
         new(
             centerLocation,
@@ -166,6 +192,12 @@ internal static class SmokeTestRunner
             BuiltInStyles.Outdoors,
             null,
             (nint)1);
+
+    private static NSUrl? CreateModelGlbUrl()
+    {
+        var path = NSBundle.MainBundle.PathForResource(ModelGlbResourceName, ModelGlbResourceExtension);
+        return string.IsNullOrWhiteSpace(path) ? null : NSUrl.FromFilename(path);
+    }
 
     private static string? ResolveAccessToken()
     {

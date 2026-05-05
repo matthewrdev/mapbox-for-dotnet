@@ -19,6 +19,12 @@
     <PackageReference Include="Bindings.Mapbox.Maps.AndroidNdk27" Version="11.19.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <AndroidAsset Include="..\MapboxBindings.TestAssets\monte-sordo-mapbox-smoke.glb">
+      <Link>monte-sordo-mapbox-smoke.glb</Link>
+    </AndroidAsset>
+  </ItemGroup>
+
   <Target
     Name="_GenerateMapboxAccessTokenResource"
     BeforeTargets="_ComputeAndroidResourcePaths"

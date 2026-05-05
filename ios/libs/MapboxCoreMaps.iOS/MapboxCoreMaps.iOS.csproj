@@ -23,7 +23,7 @@
     <FileVersion>$(_NativeVersion)</FileVersion>
   </PropertyGroup>
   <PropertyGroup>
-    <PackageId>MapboxCoreMaps.iOS</PackageId>
+    <PackageId>Bindings.Mapbox.iOS.CoreMaps</PackageId>
     <Title>Mapbox iOS SDK - MapboxCoreMaps</Title>
     <Summary>.NET iOS bindings for Mapbox SDK - MapboxCoreMaps</Summary>
     <Description>.NET iOS bindings for Mapbox SDK - MapboxCoreMaps</Description>
@@ -39,8 +39,8 @@
     <PackageVersion>$(_NugetVersion)</PackageVersion>
   </PropertyGroup>
   <ItemGroup>
-    <None Include="MapboxCoreMaps.iOS.targets" Pack="True" PackagePath="build/MapboxCoreMaps.iOS.targets" />
-    <None Include="MapboxCoreMaps.iOS.targets" Pack="True" PackagePath="buildTransitive/MapboxCoreMaps.iOS.targets" />
+    <None Include="MapboxCoreMaps.iOS.targets" Pack="True" PackagePath="build/Bindings.Mapbox.iOS.CoreMaps.targets" />
+    <None Include="MapboxCoreMaps.iOS.targets" Pack="True" PackagePath="buildTransitive/Bindings.Mapbox.iOS.CoreMaps.targets" />
     <None Include="../../source/External-Dependency-Info.txt" Pack="True" PackagePath="THIRD-PARTY-NOTICES.txt" />
 		<None Include="../../assets/tv-mapbox.png" Pack="True" PackagePath="tv-mapbox.png" />
 		<None Include="../../LICENSE" Pack="True" PackagePath="" />

@@ -23,7 +23,7 @@
     <FileVersion>$(_NativeVersion)</FileVersion>
   </PropertyGroup>
   <PropertyGroup>
-    <PackageId>Turf.iOS</PackageId>
+    <PackageId>Bindings.Mapbox.iOS.Turf</PackageId>
     <Title>Mapbox SDK for .NET iOS</Title>
     <Summary>C# bindings for Mapbox iOS SDK - Turf</Summary>
     <Description>C# bindings for Mapbox iOS SDK - Turf</Description>
@@ -39,8 +39,8 @@
     <PackageVersion>$(_NugetVersion)</PackageVersion>
   </PropertyGroup>
   <ItemGroup>
-    <None Include="Turf.iOS.targets" Pack="True" PackagePath="build/Turf.iOS.targets" />
-    <None Include="Turf.iOS.targets" Pack="True" PackagePath="buildTransitive/Turf.iOS.targets" />
+    <None Include="Turf.iOS.targets" Pack="True" PackagePath="build/Bindings.Mapbox.iOS.Turf.targets" />
+    <None Include="Turf.iOS.targets" Pack="True" PackagePath="buildTransitive/Bindings.Mapbox.iOS.Turf.targets" />
     <None Include="../../source/External-Dependency-Info.txt" Pack="True" PackagePath="THIRD-PARTY-NOTICES.txt" />
 		<None Include="../../assets/tv-mapbox.png" Pack="True" PackagePath="tv-mapbox.png" />
 		<None Include="../../LICENSE" Pack="True" PackagePath="" />

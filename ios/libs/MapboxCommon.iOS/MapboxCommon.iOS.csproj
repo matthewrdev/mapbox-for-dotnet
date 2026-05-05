@@ -23,7 +23,7 @@
     <FileVersion>$(_NativeVersion)</FileVersion>
   </PropertyGroup>
   <PropertyGroup>
-    <PackageId>MapboxCommon.iOS</PackageId>
+    <PackageId>Bindings.Mapbox.iOS.Common</PackageId>
     <Title>Mapbox iOS SDK - MapboxCommon</Title>
     <Summary>.NET iOS bindings for Mapbox SDK - MapboxCommon</Summary>
     <Description>.NET iOS bindings for Mapbox SDK - MapboxCommon</Description>
@@ -42,8 +42,8 @@
     <Folder Include="Resources\" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="MapboxCommon.iOS.targets" Pack="True" PackagePath="build/MapboxCommon.iOS.targets" />
-    <None Include="MapboxCommon.iOS.targets" Pack="True" PackagePath="buildTransitive/MapboxCommon.iOS.targets" />
+    <None Include="MapboxCommon.iOS.targets" Pack="True" PackagePath="build/Bindings.Mapbox.iOS.Common.targets" />
+    <None Include="MapboxCommon.iOS.targets" Pack="True" PackagePath="buildTransitive/Bindings.Mapbox.iOS.Common.targets" />
     <None Include="../../source/External-Dependency-Info.txt" Pack="True" PackagePath="THIRD-PARTY-NOTICES.txt" />
 		<None Include="../../assets/tv-mapbox.png" Pack="True" PackagePath="tv-mapbox.png" />
 		<None Include="../../LICENSE" Pack="True" PackagePath="" />

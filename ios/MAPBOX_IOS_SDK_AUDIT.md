@@ -28,13 +28,13 @@ The iOS binding is still on the older `11.8.0` stack:
 
 | Area | Current version |
 | --- | ---: |
-| `MapboxMaps.iOS` package | `11.8.0` |
-| `MapboxCoreMaps.iOS` package | `11.8.0` |
-| `MapboxMapsObjC.iOS` package | `11.8.0` |
-| `MapboxCommon.iOS` package | `24.8.0` |
-| `Turf.iOS` package | `3.0.0` |
+| `Bindings.Mapbox.iOS` package | `11.8.0` |
+| `Bindings.Mapbox.iOS.CoreMaps` package | `11.8.0` |
+| `Bindings.Mapbox.iOS.MapsObjC` package | `11.8.0` |
+| `Bindings.Mapbox.iOS.Common` package | `24.8.0` |
+| `Bindings.Mapbox.iOS.Turf` package | `3.0.0` |
 | iOS and MAUI harness package references | `11.8.0` |
-| iOS quickstart package references | `11.3.0.2` |
+| iOS quickstart package references | `11.8.0` |
 | Native artifact license | `11.8.0` |
 
 The version pins are duplicated across project files and `.targets` files, so a safe upgrade needs both build metadata and package metadata updated together.

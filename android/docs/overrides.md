@@ -26,6 +26,9 @@ If a binding folder is not listed here, it should ideally contain no hand-writte
 
 ### `src/android/com.mapbox.common/common-ndk27`
 
+- `24.19.0.fixed.json`
+  Uses the official `Square.OkIO` package and lifts `Xamarin.Kotlin.StdLib.Common`
+  to satisfy OkIO's Kotlin dependency floor.
 - `Transforms/Metadata.xml`
   Renames `Location` and opens `GooglePlayServicesHelper`.
 - `Additions/Additions.cs`

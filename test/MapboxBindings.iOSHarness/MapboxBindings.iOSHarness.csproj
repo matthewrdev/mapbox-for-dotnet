@@ -38,8 +38,8 @@
   </Target>
 
   <ItemGroup>
-    <PackageReference Include="MapboxMaps.iOS" Version="11.8.0" />
-    <PackageReference Include="MapboxMapsObjC.iOS" Version="11.8.0" />
+    <PackageReference Include="Bindings.Mapbox.iOS" Version="11.8.0" />
+    <PackageReference Include="Bindings.Mapbox.iOS.MapsObjC" Version="11.8.0" />
   </ItemGroup>
 
   <ItemGroup>

@@ -19,11 +19,16 @@ MAPBOX_DOWNLOADS_TOKEN=your_token_here
 Current checked-in root:
 
 ```text
-com.mapbox.maps:android-ndk27:11.19.0
+com.mapbox.maps:android-ndk27:11.23.0
 ```
 
 This is the repository's current Android binding root. Check the upstream
 Mapbox Android docs before choosing the next target version.
+
+NuGet package versions should use the native artifact version plus one package
+revision component. For example, the `11.23.0` Android SDK packages are
+published as `11.23.0.1`, and binding-only maintenance updates can increment
+only the final component.
 
 Update `.github/workflows/mapbox.yml` first so the workflow input matches the version you are preparing.
 

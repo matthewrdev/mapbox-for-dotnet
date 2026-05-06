@@ -4761,6 +4761,11 @@ namespace MapboxMapsObjC
         [Export("heatmap", ArgumentSemantic.Strong)]
         TMBLayerType Heatmap { get; }
 
+        // @property (readonly, nonatomic, strong, class) TMBLayerType * _Nonnull clip;
+        [Static]
+        [Export("clip", ArgumentSemantic.Strong)]
+        TMBLayerType Clip { get; }
+
         // @property (readonly, nonatomic, strong, class) TMBLayerType * _Nonnull fillExtrusion;
         [Static]
         [Export("fillExtrusion", ArgumentSemantic.Strong)]
@@ -4770,6 +4775,11 @@ namespace MapboxMapsObjC
         [Static]
         [Export("raster", ArgumentSemantic.Strong)]
         TMBLayerType Raster { get; }
+
+        // @property (readonly, nonatomic, strong, class) TMBLayerType * _Nonnull rasterParticle;
+        [Static]
+        [Export("rasterParticle", ArgumentSemantic.Strong)]
+        TMBLayerType RasterParticle { get; }
 
         // @property (readonly, nonatomic, strong, class) TMBLayerType * _Nonnull hillshade;
         [Static]
@@ -4791,10 +4801,15 @@ namespace MapboxMapsObjC
         [Export("sky", ArgumentSemantic.Strong)]
         TMBLayerType Sky { get; }
 
-        // @property (readonly, nonatomic, strong, class) TMBLayerType * _Nonnull custom;
+        // @property (readonly, nonatomic, strong, class) TMBLayerType * _Nonnull slot;
         [Static]
-        [Export("custom", ArgumentSemantic.Strong)]
-        TMBLayerType Custom { get; }
+        [Export("slot", ArgumentSemantic.Strong)]
+        TMBLayerType Slot { get; }
+
+        // @property (readonly, nonatomic, strong, class) TMBLayerType * _Nonnull model;
+        [Static]
+        [Export("model", ArgumentSemantic.Strong)]
+        TMBLayerType Model { get; }
 
         // @property (readonly, copy, nonatomic) NSString * _Nonnull rawValue;
         [Export("rawValue")]
@@ -5515,13 +5530,13 @@ namespace MapboxMapsObjC
         [Export("getStyleImportSchemaFor:completion:")]
         void GetStyleImportSchemaFor(string importId, [NullAllowed] Action<NSObject, NSError> completion);
 
-        // -(void)getStyleImportConfigPropertiesFor:(NSString * _Nonnull)importId completion:(void (^ _Nullable)(NSDictionary<NSString *,MBMStylePropertyValue *> * _Nullable, NSError * _Nullable))completion;
+        // -(void)getStyleImportConfigPropertiesFor:(NSString * _Nonnull)importId completion:(void (^ _Nullable)(NSDictionary<NSString *,TMBStylePropertyValue *> * _Nullable, NSError * _Nullable))completion;
         [Export("getStyleImportConfigPropertiesFor:completion:")]
-        void GetStyleImportConfigPropertiesFor(string importId, [NullAllowed] Action<NSDictionary<NSString, MBMStylePropertyValue>, NSError> completion);
+        void GetStyleImportConfigPropertiesFor(string importId, [NullAllowed] Action<NSDictionary<NSString, TMBStylePropertyValue>, NSError> completion);
 
-        // -(void)getStyleImportConfigPropertyFor:(NSString * _Nonnull)importId config:(NSString * _Nonnull)config completion:(void (^ _Nullable)(MBMStylePropertyValue * _Nullable, NSError * _Nullable))completion;
+        // -(void)getStyleImportConfigPropertyFor:(NSString * _Nonnull)importId config:(NSString * _Nonnull)config completion:(void (^ _Nullable)(TMBStylePropertyValue * _Nullable, NSError * _Nullable))completion;
         [Export("getStyleImportConfigPropertyFor:config:completion:")]
-        void GetStyleImportConfigPropertyFor(string importId, string config, [NullAllowed] Action<MBMStylePropertyValue, NSError> completion);
+        void GetStyleImportConfigPropertyFor(string importId, string config, [NullAllowed] Action<TMBStylePropertyValue, NSError> completion);
 
         // -(void)setStyleImportConfigPropertiesFor:(NSString * _Nonnull)importId configs:(NSDictionary<NSString *,id> * _Nonnull)configs completion:(void (^ _Nullable)(NSError * _Nullable))completion;
         [Export("setStyleImportConfigPropertiesFor:configs:completion:")]
@@ -5567,17 +5582,17 @@ namespace MapboxMapsObjC
         [Export("layerPropertyValueFor:property:")]
         NSObject LayerPropertyValueFor(string layerId, string property);
 
-        // -(MBMStylePropertyValue * _Nonnull)layerPropertyFor:(NSString * _Nonnull)layerId property:(NSString * _Nonnull)property __attribute__((warn_unused_result("")));
+        // -(TMBStylePropertyValue * _Nonnull)layerPropertyFor:(NSString * _Nonnull)layerId property:(NSString * _Nonnull)property __attribute__((warn_unused_result("")));
         [Export("layerPropertyFor:property:")]
-        MBMStylePropertyValue LayerPropertyFor(string layerId, string property);
+        TMBStylePropertyValue LayerPropertyFor(string layerId, string property);
 
         // -(void)setLayerPropertyFor:(NSString * _Nonnull)layerId property:(NSString * _Nonnull)property value:(id _Nonnull)value completion:(void (^ _Nullable)(NSError * _Nullable))completion;
         [Export("setLayerPropertyFor:property:value:completion:")]
         void SetLayerPropertyFor(string layerId, string property, NSObject value, [NullAllowed] Action<NSError> completion);
 
-        // -(MBMStylePropertyValue * _Nonnull)layerPropertyDefaultValueFor:(TMBLayerType * _Nonnull)layerType property:(NSString * _Nonnull)property __attribute__((warn_unused_result("")));
+        // -(TMBStylePropertyValue * _Nonnull)layerPropertyDefaultValueFor:(TMBLayerType * _Nonnull)layerType property:(NSString * _Nonnull)property __attribute__((warn_unused_result("")));
         [Export("layerPropertyDefaultValueFor:property:")]
-        MBMStylePropertyValue LayerPropertyDefaultValueFor(TMBLayerType layerType, string property);
+        TMBStylePropertyValue LayerPropertyDefaultValueFor(TMBLayerType layerType, string property);
 
         // -(void)layerPropertiesFor:(NSString * _Nonnull)layerId completion:(void (^ _Nullable)(NSDictionary<NSString *,id> * _Nullable, NSError * _Nullable))completion;
         [Export("layerPropertiesFor:completion:")]
@@ -5603,9 +5618,9 @@ namespace MapboxMapsObjC
         [Export("allSourceIdentifiers", ArgumentSemantic.Copy)]
         TMBSourceInfo[] AllSourceIdentifiers { get; }
 
-        // -(MBMStylePropertyValue * _Nonnull)sourcePropertyFor:(NSString * _Nonnull)sourceId property:(NSString * _Nonnull)property __attribute__((warn_unused_result("")));
+        // -(TMBStylePropertyValue * _Nonnull)sourcePropertyFor:(NSString * _Nonnull)sourceId property:(NSString * _Nonnull)property __attribute__((warn_unused_result("")));
         [Export("sourcePropertyFor:property:")]
-        MBMStylePropertyValue SourcePropertyFor(string sourceId, string property);
+        TMBStylePropertyValue SourcePropertyFor(string sourceId, string property);
 
         // -(void)setSourcePropertyFor:(NSString * _Nonnull)sourceId property:(NSString * _Nonnull)property value:(id _Nonnull)value completion:(void (^ _Nullable)(NSError * _Nullable))completion;
         [Export("setSourcePropertyFor:property:value:completion:")]
@@ -5619,9 +5634,9 @@ namespace MapboxMapsObjC
         [Export("setSourcePropertiesFor:properties:completion:")]
         void SetSourcePropertiesFor(string sourceId, NSDictionary<NSString, NSObject> properties, [NullAllowed] Action<NSError> completion);
 
-        // -(MBMStylePropertyValue * _Nonnull)sourcePropertyDefaultValueFor:(NSString * _Nonnull)sourceType property:(NSString * _Nonnull)property __attribute__((warn_unused_result("")));
+        // -(TMBStylePropertyValue * _Nonnull)sourcePropertyDefaultValueFor:(NSString * _Nonnull)sourceType property:(NSString * _Nonnull)property __attribute__((warn_unused_result("")));
         [Export("sourcePropertyDefaultValueFor:property:")]
-        MBMStylePropertyValue SourcePropertyDefaultValueFor(string sourceType, string property);
+        TMBStylePropertyValue SourcePropertyDefaultValueFor(string sourceType, string property);
 
         // -(void)updateImageSourceWithId:(NSString * _Nonnull)id image:(UIImage * _Nonnull)image completion:(void (^ _Nullable)(NSError * _Nullable))completion;
         [Export("updateImageSourceWithId:image:completion:")]
@@ -5688,9 +5703,9 @@ namespace MapboxMapsObjC
         [Export("terrainPropertyValue:")]
         NSObject TerrainPropertyValue(string property);
 
-        // -(MBMStylePropertyValue * _Nonnull)terrainProperty:(NSString * _Nonnull)property __attribute__((warn_unused_result("")));
+        // -(TMBStylePropertyValue * _Nonnull)terrainProperty:(NSString * _Nonnull)property __attribute__((warn_unused_result("")));
         [Export("terrainProperty:")]
-        MBMStylePropertyValue TerrainProperty(string property);
+        TMBStylePropertyValue TerrainProperty(string property);
 
         // -(void)setAtmosphere:(TMBAtmosphere * _Nonnull)atmosphere completion:(void (^ _Nullable)(NSError * _Nullable))completion;
         [Export("setAtmosphere:completion:")]
@@ -5708,9 +5723,9 @@ namespace MapboxMapsObjC
         [Export("setAtmosphereProperty:value:completion:")]
         void SetAtmosphereProperty(string property, NSObject value, [NullAllowed] Action<NSError> completion);
 
-        // -(MBMStylePropertyValue * _Nonnull)atmosphereProperty:(NSString * _Nonnull)property __attribute__((warn_unused_result("")));
+        // -(TMBStylePropertyValue * _Nonnull)atmosphereProperty:(NSString * _Nonnull)property __attribute__((warn_unused_result("")));
         [Export("atmosphereProperty:")]
-        MBMStylePropertyValue AtmosphereProperty(string property);
+        TMBStylePropertyValue AtmosphereProperty(string property);
 
         // -(void)addCustomGeometrySourceWithId:(NSString * _Nonnull)id options:(MBMCustomGeometrySourceOptions * _Nonnull)options completion:(void (^ _Nullable)(NSError * _Nullable))completion;
         [Export("addCustomGeometrySourceWithId:options:completion:")]
@@ -7647,6 +7662,20 @@ namespace MapboxMapsObjC
         [Static]
         [Export("globe", ArgumentSemantic.Strong)]
         TMBStyleProjectionName Globe { get; }
+    }
+
+    // @interface TMBStylePropertyValue : NSObject
+    [BaseType(typeof(NSObject), Name = "_TtC13MapboxMapObjC21TMBStylePropertyValue")]
+    [DisableDefaultCtor]
+    interface TMBStylePropertyValue : INativeObject
+    {
+        // @property (readonly, nonatomic) id _Nullable value;
+        [NullAllowed, Export("value")]
+        NSObject Value { get; }
+
+        // @property (readonly, nonatomic) enum TMBStylePropertyValueKind kind;
+        [Export("kind")]
+        TMBStylePropertyValueKind Kind { get; }
     }
 
     // @interface TMBStyleTransition : NSObject

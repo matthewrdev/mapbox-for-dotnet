@@ -40,14 +40,15 @@ validate, and integrate from.
 
 ## Current Binding Pins
 
-- Android graph root: `com.mapbox.maps:android-ndk27:11.19.0`.
+- Android graph root: `com.mapbox.maps:android-ndk27:11.23.0`;
+  root NuGet package version `11.23.0.2`.
 - iOS packages: `Bindings.Mapbox.iOS`,
-  `Bindings.Mapbox.iOS.CoreMaps`, and `Bindings.Mapbox.iOS.MapsObjC` `11.8.0`;
-  `Bindings.Mapbox.iOS.Common` `24.8.0`; and `Bindings.Mapbox.iOS.Turf`
-  `3.0.0`.
+  `Bindings.Mapbox.iOS.CoreMaps`, and `Bindings.Mapbox.iOS.MapsObjC`
+  `11.23.0.2`; `Bindings.Mapbox.iOS.Common` `24.23.0.2`; and
+  `Bindings.Mapbox.iOS.Turf` `4.0.0.2`.
 
-These are the versions currently bound in this repository, not a statement that
-they are the latest upstream Mapbox SDKs.
+NuGet package versions use the native Mapbox SDK version plus a final package
+revision component for binding-only maintenance updates.
 
 ## Validation
 

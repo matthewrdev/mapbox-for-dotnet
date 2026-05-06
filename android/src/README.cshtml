@@ -1,5 +1,4 @@
 @using System;
-@using System.IO;
 
 @{
     var homePageUrl = string.IsNullOrWhiteSpace(Model.Artifact.Nuget.HomePageUrl)
@@ -10,38 +9,101 @@
         ? Model.Artifact.Group.GuideUrl
         : Model.Artifact.Nuget.GuideUrl;
 
-    var customGradleRepositoryFilePath = Path.Combine(        
-        Model.Config.BasePath,
-        Model.Artifact.RelativeGroupFolderPath,
-         "group.GradleRepository.xml");
-    var gradleRepository = File.Exists(customGradleRepositoryFilePath)
-        ? File.ReadAllText(customGradleRepositoryFilePath)
-        : null;
+    var packageId = Model.Artifact.Nuget.PackageId;
+    var isMapboxPackage = Model.Artifact.Group.Id.StartsWith("com.mapbox", StringComparison.Ordinal);
+    var isMapsPackage = string.Equals(packageId, "Bindings.Mapbox.Maps.AndroidNdk27", StringComparison.Ordinal);
 }
 @Raw("# " + Model.Artifact.Group.Name + " - " + Model.Artifact.Nuget.Name)
 
-This is the .NET Android binding library for @(Model.Artifact.Key) maintained by [@(Model.Artifact.MaintainerDisplayName)](@(Model.Artifact.MaintainerUrl)).
-The binding source code can be found [here](@(Model.Artifact.RepositoryUrl)).
+.NET Android binding for `@(Model.Artifact.GradleImplementation)`.[^tuyen]
 
+## Install
+
+@if (isMapsPackage) {
+@Raw("For a .NET Android app that renders Mapbox maps, install this package:")
+} else if (isMapboxPackage) {
+@Raw("Most apps should install `Bindings.Mapbox.Maps.AndroidNdk27` and let NuGet bring this package in transitively. Install this package directly only when you use APIs from this Maven artifact.")
+} else {
+@Raw("This support binding is normally pulled in by the Mapbox packages. Install it directly only if your app uses this artifact's APIs.")
+}
+
+```bash
+dotnet add package @(packageId) --version @(Model.Artifact.Version.NugetVersion)
+```
+
+@if (isMapboxPackage) {
+@Raw(@"## Mapbox Setup
+
+Mapbox Android artifacts are resolved from Mapbox's Maven repository during your app build. Add this once to the consuming app project:
+
+```xml
+<ItemGroup>
+  <GradleRepository Include=""https://api.mapbox.com/downloads/v2/releases/maven"">
+    <Repository><![CDATA[
+      maven {
+          url = uri(""https://api.mapbox.com/downloads/v2/releases/maven"")
+          credentials {
+              username = ""mapbox""
+              password = providers.gradleProperty(""MAPBOX_DOWNLOADS_TOKEN"").orNull
+          }
+          authentication {
+              create<BasicAuthentication>(""basic"")
+          }
+      }
+    ]]></Repository>
+  </GradleRepository>
+</ItemGroup>
+```
+
+Provide the secret downloads token through Gradle, not in source control:
+
+```bash
+export ORG_GRADLE_PROJECT_MAPBOX_DOWNLOADS_TOKEN=sk...
+```
+
+You can also set `MAPBOX_DOWNLOADS_TOKEN=sk...` in `~/.gradle/gradle.properties`.
+
+Use a public Mapbox access token at runtime before creating the map:
+
+```csharp
+Com.Mapbox.Common.MapboxOptions.AccessToken = ""pk..."";
+```
+")
+}
+
+@if (isMapsPackage) {
+@Raw(@"## Minimal Map
+
+```csharp
+using Com.Mapbox.Common;
+using Com.Mapbox.Maps;
+
+MapboxOptions.AccessToken = ""pk..."";
+
+var mapInitOptions = new MapInitOptions(
+    this,
+    MapInitOptions.CompanionField.GetDefaultMapOptions(this),
+    MapInitOptions.CompanionField.DefaultPluginList,
+    cameraOptions: null,
+    textureView: false,
+    styleUri: Style.Outdoors);
+
+var mapView = new MapView(this, mapInitOptions);
+SetContentView(mapView);
+```
+
+Keep the `MapView` in a field and forward your activity lifecycle callbacks to it (`OnStart`, `OnStop`, `OnDestroy`, and `OnLowMemory`).
+")
+}
+
+## Links
+
+- Binding source: [@(Model.Artifact.RepositoryUrl)](@(Model.Artifact.RepositoryUrl))
 @if (!string.IsNullOrWhiteSpace(homePageUrl)) {
-    @Raw("## Home page\n\n")
-
-    @(homePageUrl)
-
+@Raw("- Mapbox docs: [" + homePageUrl + "](" + homePageUrl + ")\n")
+}
+@if (!string.IsNullOrWhiteSpace(guideUrl) && !string.Equals(guideUrl, homePageUrl, StringComparison.Ordinal)) {
+@Raw("- Guide: [" + guideUrl + "](" + guideUrl + ")\n")
 }
 
-@if (!string.IsNullOrWhiteSpace(guideUrl)) {
-    @Raw("\n## Guide page\n\n")
-
-    @(guideUrl)
-}
-
-@if (!string.IsNullOrWhiteSpace(gradleRepository)) {
-    @Raw("\n## Maven repository setup\n\n")
-
-    @Raw("Open your CSPROJ file and add these lines:\n\n")
-    
-    @Raw("```\n")
-    @Raw(gradleRepository)    
-    @Raw("\n```")
-}
+[^tuyen]: These Android bindings build on the binding-generation approach from [Tuyen Vu Duc](https://github.com/tuyen-vuduc)'s [`dotnet-binding-utils`](https://github.com/tuyen-vuduc/dotnet-binding-utils). Native Mapbox SDK components and Mapbox artifacts are copyright Mapbox, Inc. Please consider [sponsoring Tuyen](https://github.com/sponsors/tuyen-vuduc).

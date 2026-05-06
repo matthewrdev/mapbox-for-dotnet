@@ -1,5 +1,5 @@
 {
-  "revision": 0,
-  "nugetVersion": "7.10.0",
+  "revision": 2,
+  "nugetVersion": "7.10.0.2",
   "runtimeDependenciesAsCompile": true
 }

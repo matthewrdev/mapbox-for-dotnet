@@ -1,6 +1,12 @@
 **Matthew Robbins is not responsible for, nor does it grant any licenses to, third-party packages. Some packages may require or install dependencies which are governed by additional licenses or terms.**
 
-Note: This repository produces bindings for Android Mapbox SDK components, which remain subject to their own licenses and terms of service.
+Note: This repository produces bindings for Android Mapbox SDK components. The binding approach builds on work by Tuyen Vu Duc. Native Mapbox SDK components and Mapbox artifacts remain subject to Mapbox licenses and terms of service.
+
+**Copyright Notices**
+
+Binding package code: Copyright 2026 Matthew Robbins.
+Original binding work and strategy: Copyright Tuyen Vu Duc.
+Native Mapbox SDK and Mapbox artifacts: Copyright Mapbox, Inc.
 
 **The 3-Clause BSD License**
 

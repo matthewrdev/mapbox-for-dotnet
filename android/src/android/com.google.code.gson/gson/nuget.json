@@ -1,0 +1,5 @@
+{
+  "packageId": "GoogleGson",
+  "name": "gson",
+  "dependencyOnly": true
+}

@@ -2,7 +2,7 @@
 @using System.Linq
 @using System.Collections.Generic
 @{
-  var packageIconPath = Model.Artifact.Icon ?? "../../../../../assets/tv-ico.png";
+  var packageIconPath = Model.Artifact.Icon ?? "../../../../../assets/mapbox-dotnet.png";
   var assemblyVersion = Model.Artifact.AssemblyVersion;
   var winSourcesJarRelativeFilePath = string.IsNullOrEmpty(Model.Artifact.SourcesJarRelativeFilePath) ? null :
   Model.Artifact.SourcesJarRelativeFilePath.Replace('/', '\\');
@@ -36,7 +36,7 @@
     <FileVersion>@(assemblyVersion)</FileVersion>
     <InformationalVersion>@(Model.Artifact.InformationalVersion)</InformationalVersion>
     <AssemblyVersion>@(assemblyVersion)</AssemblyVersion>
-    <Copyright>© @(Model.Artifact.CopyrightHolder). All rights reserved.</Copyright>
+    <Copyright>Binding package © Matthew Robbins. Original binding work and strategy © Tuyen Vu Duc. Native Mapbox SDK and Mapbox artifacts © Mapbox, Inc.</Copyright>
     <PackageProjectUrl>@(Model.Artifact.PackageProjectUrl)</PackageProjectUrl>
     <RepositoryUrl>@(Model.Artifact.RepositoryUrl)</RepositoryUrl>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>

@@ -40,7 +40,7 @@ Run these commands from this `android` folder.
 Generate or regenerate the checked-in graph:
 
 ```bash
-sh bind.sh --artifact com.mapbox.maps:android-ndk27:11.19.0
+sh bind.sh --artifact com.mapbox.maps:android-ndk27:11.23.0
 ```
 
 Build the generated solution:

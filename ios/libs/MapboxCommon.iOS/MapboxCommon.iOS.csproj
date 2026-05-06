@@ -10,9 +10,10 @@
       <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup>
-    <_NativeVersion>24.8.0</_NativeVersion>
+    <_NativeVersion>24.23.0</_NativeVersion>
+    <_NugetRevision>2</_NugetRevision>
     <_NugetSuffix></_NugetSuffix>
-    <_NugetVersion>$(_NativeVersion)$(_NugetSuffix)</_NugetVersion>
+    <_NugetVersion>$(_NativeVersion).$(_NugetRevision)$(_NugetSuffix)</_NugetVersion>
   </PropertyGroup>
   <PropertyGroup>
     <RootNamespace>MapboxCommon.iOS</RootNamespace>
@@ -27,13 +28,13 @@
     <Title>Mapbox iOS SDK - MapboxCommon</Title>
     <Summary>.NET iOS bindings for Mapbox SDK - MapboxCommon</Summary>
     <Description>.NET iOS bindings for Mapbox SDK - MapboxCommon</Description>
-    <Authors>tuyen,tuyen-vuduc</Authors>
-    <Owners>tuyen,tuyen-vuduc</Owners>
-    <Copyright>© tuyen-vuduc. All rights reserved.</Copyright>
-    <RepositoryUrl>https://github.com/tuyen-vuduc/mapbox-ios-binding</RepositoryUrl>
-    <PackageProjectUrl>https://mapbox.tuyen-vuduc.tech/</PackageProjectUrl>
+    <Authors>Matthew Robbins</Authors>
+    <Owners>Matthew Robbins</Owners>
+    <Copyright>Binding package © Matthew Robbins. Original iOS binding and bridge work © Tuyen Vu Duc. Native Mapbox SDK and Mapbox artifacts © Mapbox, Inc.</Copyright>
+    <RepositoryUrl>https://github.com/matthewrdev/mapbox-for-dotnet</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/matthewrdev/mapbox-for-dotnet</PackageProjectUrl>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
-    <PackageIcon>tv-mapbox.png</PackageIcon>
+    <PackageIcon>mapbox-dotnet.png</PackageIcon>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <PackageVersion>$(_NugetVersion)</PackageVersion>
@@ -45,7 +46,7 @@
     <None Include="MapboxCommon.iOS.targets" Pack="True" PackagePath="build/Bindings.Mapbox.iOS.Common.targets" />
     <None Include="MapboxCommon.iOS.targets" Pack="True" PackagePath="buildTransitive/Bindings.Mapbox.iOS.Common.targets" />
     <None Include="../../source/External-Dependency-Info.txt" Pack="True" PackagePath="THIRD-PARTY-NOTICES.txt" />
-		<None Include="../../assets/tv-mapbox.png" Pack="True" PackagePath="tv-mapbox.png" />
+		<None Include="../../assets/mapbox-dotnet.png" Pack="True" PackagePath="mapbox-dotnet.png" />
 		<None Include="../../LICENSE" Pack="True" PackagePath="" />
 		<None Include="../../README.md" Pack="True" PackagePath="README.md" />
   </ItemGroup>

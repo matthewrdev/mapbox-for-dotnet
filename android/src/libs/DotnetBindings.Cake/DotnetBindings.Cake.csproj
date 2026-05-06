@@ -11,16 +11,16 @@
     <Title>DotnetBindings.Cake</Title>
     <PackageDescription>A utility for using Gradle to resolve native dependencies for binding libraries</PackageDescription>
     <PackageProjectUrl>https://github.com/matthewrdev/mapbox-for-dotnet</PackageProjectUrl>
-    <PackageIcon>tv-ico.png</PackageIcon>
+    <PackageIcon>mapbox-dotnet.png</PackageIcon>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <PackageTags>dotnet, csharp, cake, binding, android, mapbox</PackageTags>
     <Authors>Matthew Robbins</Authors>
     <Owners>Matthew Robbins</Owners>
-    <Copyright>© Matthew Robbins. All rights reserved.</Copyright>
+    <Copyright>Tooling © Matthew Robbins. Binding utility approach © Tuyen Vu Duc. Mapbox SDK and Mapbox artifacts © Mapbox, Inc. where applicable.</Copyright>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
   </PropertyGroup>
   <ItemGroup>
-    <None Include="../../../assets/tv-ico.png" Pack="true" PackagePath="" CopyToOutputDirectory="PreserveNewest" Visible="False" />
+    <None Include="../../../assets/mapbox-dotnet.png" Pack="true" PackagePath="" CopyToOutputDirectory="PreserveNewest" Visible="False" />
     <None Include="../../../LICENSE" Pack="true" PackagePath="" CopyToOutputDirectory="PreserveNewest" Visible="False" />
   </ItemGroup>
   <ItemGroup>

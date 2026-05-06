@@ -98,4 +98,13 @@ namespace MapboxMapsObjC
 		Puck2D = 0,
 		Puck3D = 1
 	}
+
+	[Native]
+	public enum TMBStylePropertyValueKind : long
+	{
+		Undefined = 0,
+		Constant = 1,
+		Expression = 2,
+		Transition = 3
+	}
 }

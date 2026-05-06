@@ -66,12 +66,12 @@
 			}
 			]]></Repository>
 		</GradleRepository>
-		<PackageReference Include="Bindings.Mapbox.Maps.AndroidNdk27" Version="11.19.0" />
+		<PackageReference Include="Bindings.Mapbox.Maps.AndroidNdk27" Version="11.23.0.2" />
 	</ItemGroup>
 
 	<ItemGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">
-		<PackageReference Include="Bindings.Mapbox.iOS" Version="11.8.0" />
-		<PackageReference Include="Bindings.Mapbox.iOS.MapsObjC" Version="11.8.0" />
+		<PackageReference Include="Bindings.Mapbox.iOS" Version="11.23.0.2" />
+		<PackageReference Include="Bindings.Mapbox.iOS.MapsObjC" Version="11.23.0.2" />
 	</ItemGroup>
 
 </Project>

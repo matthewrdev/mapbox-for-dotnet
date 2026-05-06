@@ -10,9 +10,10 @@
       <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup>
-    <_NativeVersion>11.8.0</_NativeVersion>
+    <_NativeVersion>11.23.0</_NativeVersion>
+    <_NugetRevision>2</_NugetRevision>
     <_NugetSuffix></_NugetSuffix>
-    <_NugetVersion>$(_NativeVersion)$(_NugetSuffix)</_NugetVersion>
+    <_NugetVersion>$(_NativeVersion).$(_NugetRevision)$(_NugetSuffix)</_NugetVersion>
   </PropertyGroup>
   <PropertyGroup>
     <RootNamespace>MapboxMapsObjC.iOS</RootNamespace>
@@ -27,13 +28,13 @@
     <Title>Mapbox SDK for .NET iOS</Title>
     <Summary>.NET iOS bindings for Mapbox iOS SDK - MapboxMapsObjC</Summary>
     <Description>.NET iOS bindings for Mapbox iOS SDK - MapboxMapsObjC</Description>
-    <Authors>tuyen,tuyen-vuduc</Authors>
-    <Owners>tuyen,tuyen-vuduc</Owners>
-    <Copyright>© tuyen-vuduc. All rights reserved.</Copyright>
-    <RepositoryUrl>https://github.com/tuyen-vuduc/mapbox-ios-binding</RepositoryUrl>
-    <PackageProjectUrl>https://mapbox.tuyen-vuduc.tech/</PackageProjectUrl>
+    <Authors>Matthew Robbins</Authors>
+    <Owners>Matthew Robbins</Owners>
+    <Copyright>Binding package © Matthew Robbins. Original iOS binding and bridge work © Tuyen Vu Duc. Native Mapbox SDK and Mapbox artifacts © Mapbox, Inc.</Copyright>
+    <RepositoryUrl>https://github.com/matthewrdev/mapbox-for-dotnet</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/matthewrdev/mapbox-for-dotnet</PackageProjectUrl>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
-    <PackageIcon>tv-mapbox.png</PackageIcon>
+    <PackageIcon>mapbox-dotnet.png</PackageIcon>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <PackageVersion>$(_NugetVersion)</PackageVersion>
@@ -41,8 +42,10 @@
   <ItemGroup>
     <None Include="MapboxMapsObjC.iOS.targets" Pack="True" PackagePath="build/Bindings.Mapbox.iOS.MapsObjC.targets" />
     <None Include="MapboxMapsObjC.iOS.targets" Pack="True" PackagePath="buildTransitive/Bindings.Mapbox.iOS.MapsObjC.targets" />
+    <None Include="../../artifacts/MapboxMapsObjC-11.23.0.zip" Pack="True" PackagePath="build/MapboxMapsObjC-11.23.0.zip" />
+    <None Include="../../artifacts/MapboxMapsObjC-11.23.0.zip" Pack="True" PackagePath="buildTransitive/MapboxMapsObjC-11.23.0.zip" />
     <None Include="../../source/External-Dependency-Info.txt" Pack="True" PackagePath="THIRD-PARTY-NOTICES.txt" />
-		<None Include="../../assets/tv-mapbox.png" Pack="True" PackagePath="tv-mapbox.png" />
+		<None Include="../../assets/mapbox-dotnet.png" Pack="True" PackagePath="mapbox-dotnet.png" />
 		<None Include="../../LICENSE" Pack="True" PackagePath="" />
 		<None Include="../../README.md" Pack="True" PackagePath="README.md" />
   </ItemGroup>
@@ -58,8 +61,5 @@
   <ItemGroup>
     <ObjcBindingApiDefinition Include="ApiDefinitions.cs" />
     <ObjcBindingCoreSource Include="StructsAndEnums.cs" />
-  </ItemGroup>
-  <ItemGroup>
-      <PackageReference Include="Xamarin.Build.Download" Version="0.11.4" PrivateAssets="None" />
   </ItemGroup>
 </Project>

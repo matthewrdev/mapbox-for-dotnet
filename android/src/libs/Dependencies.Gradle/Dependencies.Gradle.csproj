@@ -14,16 +14,16 @@
     <Authors>Matthew Robbins</Authors>
     <Owners>Matthew Robbins</Owners>
     <PackageProjectUrl>https://github.com/matthewrdev/mapbox-for-dotnet</PackageProjectUrl>
-    <PackageIcon>tv-ico.png</PackageIcon>
+    <PackageIcon>mapbox-dotnet.png</PackageIcon>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <Description>To resolve Android dependencies using Gradle when building an Android app project</Description>
-    <Copyright>© Matthew Robbins. All rights reserved.</Copyright>
+    <Copyright>Tooling © Matthew Robbins. Binding utility approach © Tuyen Vu Duc. Mapbox SDK and Mapbox artifacts © Mapbox, Inc. where applicable.</Copyright>
     <RepositoryUrl>https://github.com/matthewrdev/mapbox-for-dotnet.git</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
   </PropertyGroup>
   <ItemGroup>
-      <None Include="../../../assets/tv-ico.png" Pack="true" PackagePath="" CopyToOutputDirectory="PreserveNewest" Visible="False" />
+      <None Include="../../../assets/mapbox-dotnet.png" Pack="true" PackagePath="" CopyToOutputDirectory="PreserveNewest" Visible="False" />
       <None Include="../../../LICENSE" Pack="true" PackagePath="" CopyToOutputDirectory="PreserveNewest" Visible="False" />
   </ItemGroup>
   <ItemGroup>

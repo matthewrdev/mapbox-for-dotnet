@@ -1,6 +1,6 @@
 # iOS Mapbox SDK Audit
 
-Audit date: 2026-05-05
+Audit date: 2026-05-06
 
 ## Target SDK
 
@@ -24,20 +24,24 @@ For `11.23.0`, Mapbox pins the dependency stack to:
 
 ## Current Repository State
 
-The iOS binding is still on the older `11.8.0` stack:
+The iOS package and native download metadata has been advanced to the `11.23.0`
+stack, with NuGet package versions using a final binding-maintenance revision:
 
 | Area | Current version |
 | --- | ---: |
-| `Bindings.Mapbox.iOS` package | `11.8.0` |
-| `Bindings.Mapbox.iOS.CoreMaps` package | `11.8.0` |
-| `Bindings.Mapbox.iOS.MapsObjC` package | `11.8.0` |
-| `Bindings.Mapbox.iOS.Common` package | `24.8.0` |
-| `Bindings.Mapbox.iOS.Turf` package | `3.0.0` |
-| iOS and MAUI harness package references | `11.8.0` |
-| iOS quickstart package references | `11.8.0` |
+| `Bindings.Mapbox.iOS` package | `11.23.0.2` |
+| `Bindings.Mapbox.iOS.CoreMaps` package | `11.23.0.2` |
+| `Bindings.Mapbox.iOS.MapsObjC` package | `11.23.0.2` |
+| `Bindings.Mapbox.iOS.Common` package | `24.23.0.2` |
+| `Bindings.Mapbox.iOS.Turf` package | `4.0.0.2` |
+| iOS and MAUI harness package references | `11.23.0.2` |
+| iOS quickstart package references | `11.23.0.2` |
 | Native artifact license | `11.8.0` |
 
-The version pins are duplicated across project files and `.targets` files, so a safe upgrade needs both build metadata and package metadata updated together.
+The Objective-C bridge has been rebuilt for `11.23.0` and packaged with the
+managed bridge NuGet. The checked-in native artifact license still needs a
+separate refresh before the iOS package set should be treated as fully
+validated for publication.
 
 ## Verification Performed
 
@@ -55,6 +59,15 @@ The version pins are duplicated across project files and `.targets` files, so a 
   - Installed Xcode: `26.3`
   - Active iPhoneOS/iPhoneSimulator SDK: `26.2`
   - Installed .NET iOS workload: `26.2.10233`
+- Rebuilt `MapboxMapObjC.xcframework` from a temporary SwiftPM/Xcode package
+  against `mapbox-maps-ios-binary` `11.23.0`.
+- Replaced the Google Drive bridge download with packaged
+  `MapboxMapsObjC-11.23.0.zip` extraction from `MapboxMapsObjC.iOS.targets`.
+- Updated the bridge binding surface for `TMBStylePropertyValue` and current
+  `TMBLayerType` static values.
+- Built `test/MapboxBindings.iOSHarness` for `net10.0-ios` and
+  `iossimulator-arm64`, confirming the packaged bridge extracts and is embedded
+  into the simulator app bundle.
   - The build still emits expected generated binding warnings about hidden
     inherited members.
 - Confirmed app-level verification is not currently runnable from a clean
@@ -94,35 +107,50 @@ High-risk binding areas:
 - Type renames or removed symbols in `MapboxCoreMaps` and `MapboxCommon`.
 - Any hand-edited C# in `ApiDefinitions.cs` and `StructsAndEnums.cs`.
 
-### 3. Rebuild the Objective-C bridge
+### 3. Objective-C bridge
 
-`MapboxMapsObjC.iOS` is the critical blocker. Mapbox does not ship this framework; it comes from the separate Objective-C bridge strategy based on `tuyen-vuduc/mapbox-ios-objective-c`.
+`MapboxMapsObjC.iOS` is the local Objective-C bridge. Mapbox does not ship this
+framework; it comes from the separate Objective-C bridge strategy based on
+`tuyen-vuduc/mapbox-ios-objective-c`.
 
 Current state:
 
-- The package version is `11.8.0`.
-- The `.targets` file downloads `MapboxMapObjC.xcframework` from a Google Drive file id.
-- There is no reproducible bridge build integrated into this repository.
+- The package version is `11.23.0.2`.
+- The bridge was rebuilt against MapboxMaps `11.23.0`, MapboxCommon `24.23.0`,
+  and Turf `4.0.0`.
+- The `.targets` file extracts the packaged `MapboxMapsObjC-11.23.0.zip`
+  archive into the consuming project's intermediate output folder.
+- The checked-in `MapboxMapObjC-Swift.h` header reflects the rebuilt bridge API.
 - The upstream bridge repo still has stale version pins in its CocoaPods metadata.
 
-Work required:
+Compatibility patches used for the rebuild:
 
-- Update the bridge project to MapboxMaps `11.23.0`.
-- Build a new `MapboxMapObjC.xcframework`.
-- Validate that the bridge Swift code still compiles against the `11.23.0` API surface.
-- Publish the resulting bridge archive somewhere deterministic.
-- Replace the Google Drive-only download reference with a reproducible or explicitly versioned artifact source.
-- Update `MapboxMapsObjC.iOS` binding definitions if the bridge API changed.
+- Added explicit Swift imports needed by the SwiftPM/Xcode package build.
+- Wrapped Mapbox's Swift-only `StylePropertyValue` in `TMBStylePropertyValue`
+  for Objective-C and .NET binding exposure.
+- Updated bridge code for current `PuckBearing`, model layer, layer type, and
+  expression cases.
 
-Local attempt:
+Future SDK updates should:
 
-- A temporary SwiftPM manifest was able to resolve and download the `11.23.0` binary dependency stack.
-- The plain `swift build` path failed because SwiftPM treated the package as a macOS build.
-- A proper iOS XCFramework build still needs either a working CocoaPods setup or an Xcode package/archive setup for the bridge target.
+- Rebuild the bridge against the new Mapbox SDK version.
+- Replace `ios/artifacts/MapboxMapsObjC-<version>.zip`.
+- Refresh `MapboxMapObjC-Swift.h` from the device archive.
+- Reconcile `MapboxMapsObjC.iOS` binding definitions against the generated
+  header.
 
-### 4. Update package and build metadata
+### 4. Package and build metadata
 
-After the refreshed artifacts and bridge are in place, update these version pins together:
+The package/build metadata currently targets:
+
+- MapboxMaps, MapboxCoreMaps, and MapboxMapsObjC package version `11.23.0.2`
+- MapboxCommon package version `24.23.0.2`
+- Turf package version `4.0.0.2`
+- Native MapboxMaps/CoreMaps download version `11.23.0`
+- Native MapboxCommon version `24.23.0`
+- Native Turf version `4.0.0`
+
+Future Mapbox or binding-maintenance updates must keep these files in sync:
 
 - `ios/libs/MapboxMaps.iOS/MapboxMaps.iOS.csproj`
 - `ios/libs/MapboxMaps.iOS/MapboxMaps.iOS.targets`
@@ -141,7 +169,8 @@ After the refreshed artifacts and bridge are in place, update these version pins
 Recommended cleanup:
 
 - Add shared iOS version properties so future Mapbox upgrades do not require editing every `.csproj` and `.targets` file by hand.
-- Keep package assembly versions aligned with the native SDK versions.
+- Keep assembly versions aligned with the native SDK versions and keep NuGet
+  package versions as `<native-version>.<binding-revision>`.
 - Document the `MAPBOX_DOWNLOADS_TOKEN` requirement for native downloads and `MAPBOX_ACCESS_TOKEN` for running harnesses.
 
 ### 5. Verify with the correct toolchain
@@ -161,13 +190,12 @@ Xcode version mismatch is present in this checkout.
 
 The iOS Mapbox SDK update should be considered complete only when:
 
-- All native Mapbox package pins match the `11.23.0` dependency stack.
+- Package and native download metadata match the `11.23.0` dependency stack.
 - The checked-in artifact headers and license match the `11.23.0` archive.
 - `MapboxMapObjC.xcframework` is rebuilt for `11.23.0` and consumed from a deterministic source.
 - Binding definitions compile without generated-code errors.
 - NuGet packages are produced for the updated versions.
 - At least one iOS app harness builds and renders a Mapbox map on simulator/device.
 
-Until the Objective-C bridge is rebuilt and app-level validation runs with valid
-Mapbox tokens on simulator/device, the update should not be published as
-complete.
+Until app-level validation runs with valid Mapbox tokens on simulator/device,
+the update should not be published as complete.
